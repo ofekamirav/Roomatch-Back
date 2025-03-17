@@ -1,0 +1,104 @@
+openapi: 3.0.1
+info:
+  title: RooMatch API
+  description: API documentation for RooMatch backend
+  version: 1.0.0
+paths:
+  /users/register/roommate:
+    post:
+      tags:
+        - Roommate
+      summary: Register a roommate user
+      description: Creates a new roommate user account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoommateUser'
+      responses:
+        '201':
+          description: Roommate registration successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoommateUser'
+        '400':
+          description: Error creating user
+        '500':
+          description: Internal server error
+components:
+  schemas:
+    RoommateUser:
+      type: object
+      description: Model representing a roommate user who is looking for an apartment and roommates
+      required:
+        - firstName
+        - lastName
+        - phoneNumber
+        - gender
+        - birthDate
+        - work
+        - attributes
+        - hobbies
+        - lookingForRoomies
+        - condoPreference
+        - email
+        - password
+      properties:
+        firstName:
+          type: string
+          example: Ofek
+        lastName:
+          type: string
+          example: Amirav
+        phoneNumber:
+          type: string
+          example: 052-1234567
+        gender:
+          type: string
+          enum: [MALE, FEMALE, OTHER]
+          example: MALE
+        birthDate:
+          type: string
+          example: 1998-06-15
+        work:
+          type: string
+          example: Software Developer
+        attributes:
+          type: array
+          items:
+            type: string
+            enum: [SMOKER, STUDENT, PET_LOVER, PET_OWNER, VEGETARIAN, CLEAN, NIGHT_WORKER, IN_RELATIONSHIP, KOSHER, JEWISH, MUSLIM, CHRISTIAN, REMOTE_WORKER, ATHEIST, QUIET]
+          example: [CLEAN, QUIET]
+        hobbies:
+          type: array
+          items:
+            type: string
+            enum: [MUSICIAN, SPORT, COOKER, PARTY, TV, GAMER, ARTIST, DANCER, WRITER]
+          example: [SPORT, GAMER]
+        lookingForRoomies:
+          type: array
+          items:
+            type: string
+            enum: [SMOKER, STUDENT, PET_LOVER, PET_OWNER, VEGETARIAN, CLEAN, NIGHT_WORKER, IN_RELATIONSHIP, KOSHER, JEWISH, MUSLIM, CHRISTIAN, REMOTE_WORKER, ATHEIST, QUIET]
+          example: [QUIET, NIGHT_WORKER]
+        condoPreference:
+          type: array
+          items:
+            type: string
+            enum: [BALCONY, ELEVATOR, PET_ALLOWED, SHELTER, FURNISHED, PARKING]
+          example: [BALCONY, ELEVATOR]
+        email:
+          type: string
+          example: ofek@gmail.com
+        password:
+          type: string
+          example: 123456
+        profileImage:
+          type: string
+          nullable: true
+          example: https://example.com/profile.jpg
+servers:
+  - url: http://localhost:8080
+    description: Local server
