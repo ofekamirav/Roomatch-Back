@@ -1,13 +1,15 @@
 package com.models
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class RoommateUser(
-    val firstName: String,
-    val lastName: String,
+    val email: String,
+    val fullName: String,
     val phoneNumber: String,
+    val password: String,
+    val token: String?=null,
+    val profilePicture: String?=null,
     val gender: Gender,
     val birthDate: String,
     val work: String,
@@ -15,21 +17,6 @@ data class RoommateUser(
     val hobbies: List<Hobby>,
     val lookingForRoomies: List<Attribute>,
     val condoPreference: List<CondoPreference>,
-
-    @SerialName("roommate_id") override val id: String? = null,
-    @SerialName("roommate_user_type") override val userType: String = "Roommate",
-    @SerialName("roommate_email") override val email: String,
-    @SerialName("roommate_password") override val password: String,
-    @SerialName("roommate_profile_image") override val profileImage: String? = null,
-    @SerialName("roommate_token") override val token: String? = null
-
-) : BaseUser(
-    id = id,
-    userType = userType,
-    email = email,
-    password = password,
-    profileImage = profileImage,
-    token = token
 )
 
 @Serializable

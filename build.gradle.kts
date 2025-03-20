@@ -2,6 +2,7 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.ktor)
+    id("org.jetbrains.kotlin.plugin.serialization") version "1.8.0"
 }
 
 group = "com"
@@ -24,6 +25,7 @@ dependencies {
     implementation(libs.ktor.server.swagger)
     implementation(libs.ktor.server.swagger)
     implementation(libs.ktor.server.netty)
+    implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.jbcrypt)
     implementation(libs.java.jwt)
     implementation(libs.kmongo.coroutine)
