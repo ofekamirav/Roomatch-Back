@@ -3,6 +3,7 @@ package com.database
 import com.models.Property
 import com.models.PropertyOwnerUser
 import com.models.RoommateUser
+import org.bson.types.ObjectId
 import org.litote.kmongo.coroutine.CoroutineCollection
 import org.litote.kmongo.coroutine.CoroutineDatabase
 import org.litote.kmongo.reactivestreams.KMongo
@@ -40,17 +41,57 @@ object DatabaseManager {
         }
     }
 
+
+//-------------------------Roommates---------------------------------------------------------------
     fun getRoommatesCollection(): CoroutineCollection<RoommateUser>? {
         return roommatesCollection
     }
+
+
+    suspend fun getRoommateById(id: String): RoommateUser? {
+        return try {
+            roommatesCollection?.findOneById(id)
+        } catch (e: Exception) {
+            logger.error("Error fetching roommate by ID", e)
+            null
+        }
+    }
+
+
+    suspend fun insertRoommate(user: RoommateUser): RoommateUser? {
+        return try {
+            val insertedUser = user.copy(id = ObjectId().toHexString())
+            roommatesCollection?.insertOne(user)
+            insertedUser
+        } catch (e: Exception) {
+            logger.error("Error in insert user", e)
+            null
+        }
+    }
+
+
+
+
+//-------------------------Owners----------------------------------------------------------------
+
+
 
     fun getOwnersCollection(): CoroutineCollection<PropertyOwnerUser>? {
         return ownersCollection
     }
 
-    fun getPropertiesCollection(): CoroutineCollection<Property>? {
-        return propertiesCollection
+
+    suspend fun insertOwner(user: PropertyOwnerUser): PropertyOwnerUser? {
+        return try {
+            ownersCollection?.insertOne(user)
+            user
+        } catch (e: Exception) {
+            logger.error("Error in insert user", e)
+            null
+        }
     }
+
+
 
     suspend fun getOwnerByEmail(email: String): PropertyOwnerUser? {
         try {
@@ -65,38 +106,37 @@ object DatabaseManager {
         return null
     }
 
+
     suspend fun getOwnerById(id: String): PropertyOwnerUser? {
-        try {
-            val owner = ownersCollection?.findOneById(id)
-            if (owner == null) {
-                logger.warn("Owner not found with id: $id")
-            }
-            return owner
+       return try {
+            ownersCollection?.findOneById(id)
         } catch (e: Exception) {
-            logger.error("Error in getOwnerById", e)
+           logger.error("Error fetching owner by ID", e)
+           null
         }
-        return null
     }
 
-    suspend fun insertRoommate(user: RoommateUser): RoommateUser? {
+
+
+
+//-------------------------Properties---------------------------------------------------------------
+
+
+    fun getPropertiesCollection(): CoroutineCollection<Property>? {
+        return propertiesCollection
+    }
+
+
+
+    suspend fun getPropertyById(id: String): Property? {
         return try {
-            roommatesCollection?.insertOne(user)
-            user
+            propertiesCollection?.findOneById(id)
         } catch (e: Exception) {
-            logger.error("Error in insert user", e)
+            logger.error("Error fetching property by ID", e)
             null
         }
     }
 
-    suspend fun insertOwner(user: PropertyOwnerUser): PropertyOwnerUser? {
-        return try {
-            ownersCollection?.insertOne(user)
-            user
-        } catch (e: Exception) {
-            logger.error("Error in insert user", e)
-            null
-        }
-    }
 
     suspend fun insertProperty(property: Property): Property? {
         return try {

@@ -1,5 +1,6 @@
 package com
 
+import com.routes.configureAuthRoutes
 import com.routes.configurePropertyRoutes
 import com.routes.configureUserRoutes
 import io.ktor.server.application.*
@@ -11,5 +12,6 @@ fun Application.configureRouting() {
     routing {
         configureUserRoutes()
         configurePropertyRoutes()
+        configureAuthRoutes()
     }
 }

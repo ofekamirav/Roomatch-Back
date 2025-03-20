@@ -141,6 +141,22 @@ components:
           type: string
           example: "Property successfully added."
 
+
+    LookingForRoomiesPreference:
+      type: object
+      description: "Represents a roommate preference with an optional dealbreaker flag."
+      required:
+        - attribute
+        - isDealbreaker
+      properties:
+        attribute:
+          type: string
+          enum: [ SMOKER, STUDENT, PET_LOVER, PET_OWNER, VEGETARIAN, CLEAN, NIGHT_WORKER, IN_RELATIONSHIP, KOSHER, JEWISH, MUSLIM, CHRISTIAN, REMOTE_WORKER, ATHEIST, QUIET ]
+          example: "QUIET"
+        isDealbreaker:
+          type: boolean
+          example: true
+
     RoommateUser:
       type: object
       description: Model representing a roommate user who is looking for an apartment and roommates
@@ -189,9 +205,12 @@ components:
         lookingForRoomies:
           type: array
           items:
-            type: string
-            enum: [SMOKER, STUDENT, PET_LOVER, PET_OWNER, VEGETARIAN, CLEAN, NIGHT_WORKER, IN_RELATIONSHIP, KOSHER, JEWISH, MUSLIM, CHRISTIAN, REMOTE_WORKER, ATHEIST, QUIET]
-          example: ["QUIET", "NIGHT_WORKER"]
+            $ref: "#/components/schemas/LookingForRoomiesPreference"
+          example:
+            - attribute: "QUIET"
+              isDealbreaker: true
+            - attribute: "NIGHT_WORKER"
+              isDealbreaker: false
         condoPreference:
           type: array
           items:

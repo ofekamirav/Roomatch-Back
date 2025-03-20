@@ -19,15 +19,18 @@ object UserService {
 
         // Hashing password
         val hashedPassword = Hashing.hashPassword(user.password)
-        val newUser = user.copy(password = hashedPassword)
+        val accessToken = JWTUtils.generateToken(user.email)
+        val refreshToken = JWTUtils.generateRefreshToken(user.email)
+
+        val newUser = user.copy(password = hashedPassword, refreshToken = refreshToken)
 
         val insertedUser = DatabaseManager.insertRoommate(newUser)
 
         return if (insertedUser != null) {
-            val token = JWTUtils.generateToken(insertedUser.email)
             mapOf(
-                "token" to token,
-                "id" to (MongoOperator.id ?: "")
+                "token" to accessToken,
+                "refreshToken" to refreshToken,
+                "userId" to insertedUser.id,
             )
         } else {
             mapOf("error" to "Failed to create user.")
@@ -43,15 +46,18 @@ object UserService {
 
         // Hashing password
         val hashedPassword = Hashing.hashPassword(user.password)
-        val newUser = user.copy(password = hashedPassword)
+        val accessToken = JWTUtils.generateToken(user.email)
+        val refreshToken = JWTUtils.generateRefreshToken(user.email)
+
+        val newUser = user.copy(password = hashedPassword, refreshToken = refreshToken)
 
         val insertedUser = DatabaseManager.insertOwner(newUser)
 
         return if (insertedUser != null) {
-            val token = JWTUtils.generateToken(insertedUser.email)
             mapOf(
-                "token" to token,
-                "id" to (MongoOperator.id ?: "")
+                "token" to accessToken,
+                "refreshToken" to refreshToken,
+                "userId" to insertedUser.id,
             )
         } else {
             mapOf("error" to "Failed to create user.")

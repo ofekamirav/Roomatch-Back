@@ -3,7 +3,6 @@ package com.services
 
 import com.models.Property
 import com.database.DatabaseManager
-import org.litote.kmongo.MongoOperator
 
 object PropertyController {
 
@@ -19,7 +18,7 @@ object PropertyController {
 
         return if (insertedProperty != null) {
             mapOf(
-                "propertyId" to (MongoOperator.id ?: ""),
+                "propertyId" to insertedProperty.id,
                 "message" to "Property successfully added."
             )
         } else {
