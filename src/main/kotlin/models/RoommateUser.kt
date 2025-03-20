@@ -1,21 +1,26 @@
 package com.models
 
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
+import org.bson.codecs.pojo.annotations.BsonId
+import org.bson.types.ObjectId
+import org.litote.kmongo.Id
 
 @Serializable
 data class RoommateUser(
+    @BsonId @Contextual val id: String = ObjectId().toHexString(), // MongoDB-generated ID
     val email: String,
     val fullName: String,
     val phoneNumber: String,
     val password: String,
-    val token: String?=null,
+    val refreshToken: String?=null,
     val profilePicture: String?=null,
     val gender: Gender,
     val birthDate: String,
     val work: String,
     val attributes: List<Attribute>,
     val hobbies: List<Hobby>,
-    val lookingForRoomies: List<Attribute>,
+    val lookingForRoomies: List<LookingForRoomiesPreference>,
     val condoPreference: List<CondoPreference>,
 )
 
@@ -68,3 +73,9 @@ enum class CondoPreference {
     FURNISHED,
     PARKING
 }
+
+@Serializable
+data class LookingForRoomiesPreference(
+    val attribute: Attribute,
+    val isDealbreaker: Boolean = false
+)
