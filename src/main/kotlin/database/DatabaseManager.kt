@@ -1,6 +1,7 @@
 package com.database
 
 import com.models.BaseUser
+import com.models.Property
 import org.litote.kmongo.coroutine.CoroutineCollection
 import org.litote.kmongo.coroutine.CoroutineDatabase
 import org.litote.kmongo.reactivestreams.KMongo
@@ -9,16 +10,19 @@ import org.litote.kmongo.eq
 import org.slf4j.LoggerFactory
 
 
+
 object DatabaseManager {
     private var client = KMongo.createClient("mongodb://localhost:27017")
     private var database: CoroutineDatabase? = null
     private var usersCollection: CoroutineCollection<BaseUser>? = null
+    private var propertiesCollection: CoroutineCollection<Property>? = null
     private val logger = LoggerFactory.getLogger(DatabaseManager::class.java)
 
     init {
         try {
             connect()
             usersCollection = database?.getCollection("users")
+            propertiesCollection = database?.getCollection("properties")
         } catch (e: Exception) {
             logger.error("Error in init database", e)
         }
@@ -26,6 +30,10 @@ object DatabaseManager {
 
     fun getUsersCollection(): CoroutineCollection<BaseUser>? {
         return usersCollection
+    }
+
+    fun getPropertiesCollection(): CoroutineCollection<Property>? {
+        return propertiesCollection
     }
 
     private fun connect() {
@@ -56,5 +64,4 @@ object DatabaseManager {
     }
 
 
-    // ... פונקציות נוספות לגישה לנתונים ...
 }
