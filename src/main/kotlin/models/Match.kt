@@ -1,7 +1,9 @@
 package com.models
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class Match(
-    val id: String,
     val seekerId: String,
     val propertyId: String,
     val roommateMatches: List<RoommateMatch> = emptyList(),
@@ -9,6 +11,7 @@ data class Match(
 
     )
 
+@Serializable
 data class RoommateMatch(
     val roommateId: String,
     val matchScore: Int,

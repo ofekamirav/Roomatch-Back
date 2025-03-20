@@ -3,8 +3,9 @@ info:
   title: RooMatch API
   description: API documentation for RooMatch backend
   version: 1.0.0
+
 paths:
-  /users/register/roommate:
+  /roommates/register:
     post:
       tags:
         - Roommate
@@ -22,19 +23,129 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RoommateUser'
+                $ref: '#/components/schemas/RegisterResponse'
         '400':
           description: Error creating user
         '500':
           description: Internal server error
+
+  /owners/register:
+    post:
+      tags:
+        - Property Owner
+      summary: Register a property owner user
+      description: Creates a new property owner user account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PropertyOwnerUser'
+      responses:
+        '201':
+          description: Property owner registration successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+        '400':
+          description: Error creating user
+        '500':
+          description: Internal server error
+
+  /properties/upload/{ownerId}:
+    post:
+      tags:
+        - Properties
+      summary: Upload a new property
+      description: Adds a new property associated with an owner
+      parameters:
+        - name: ownerId
+          in: path
+          required: true
+          description: The ID of the property owner
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Property'
+      responses:
+        '201':
+          description: Property successfully added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PropertyUploadResponse'
+        '400':
+          description: Error creating property
+        '500':
+          description: Internal server error
+
+  /properties/{ownerId}:
+    get:
+      tags:
+        - Properties
+      summary: Get all properties of a specific owner
+      description: Returns all properties associated with a property owner
+      parameters:
+        - name: ownerId
+          in: path
+          required: true
+          description: The ID of the property owner
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Properties found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Property'
+        '404':
+          description: No properties found
+        '500':
+          description: Internal server error
+
 components:
   schemas:
+    RegisterResponse:
+      type: object
+      description: Model representing a response to a user registration request
+      required:
+        - id
+        - token
+      properties:
+        id:
+          type: string
+          example: "123456789"
+        token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+
+    PropertyUploadResponse:
+      type: object
+      description: Response after successfully adding a property
+      required:
+        - propertyId
+        - message
+      properties:
+        propertyId:
+          type: string
+          example: "65a123bfcdb1ef0010abcd12"
+        message:
+          type: string
+          example: "Property successfully added."
+
     RoommateUser:
       type: object
       description: Model representing a roommate user who is looking for an apartment and roommates
       required:
-        - firstName
-        - lastName
+        - fullName
         - phoneNumber
         - gender
         - birthDate
@@ -45,60 +156,142 @@ components:
         - condoPreference
         - email
         - password
+        - profilePicture
       properties:
-        firstName:
+        fullName:
           type: string
-          example: Ofek
-        lastName:
-          type: string
-          example: Amirav
+          example: "Ofek Amirav"
         phoneNumber:
           type: string
-          example: 052-1234567
+          example: "052-1234567"
         gender:
           type: string
           enum: [MALE, FEMALE, OTHER]
-          example: MALE
+          example: "MALE"
         birthDate:
           type: string
-          example: 1998-06-15
+          example: "1998-06-15"
         work:
           type: string
-          example: Software Developer
+          example: "Software Developer"
         attributes:
           type: array
           items:
             type: string
             enum: [SMOKER, STUDENT, PET_LOVER, PET_OWNER, VEGETARIAN, CLEAN, NIGHT_WORKER, IN_RELATIONSHIP, KOSHER, JEWISH, MUSLIM, CHRISTIAN, REMOTE_WORKER, ATHEIST, QUIET]
-          example: [CLEAN, QUIET]
+          example: ["CLEAN", "QUIET"]
         hobbies:
           type: array
           items:
             type: string
             enum: [MUSICIAN, SPORT, COOKER, PARTY, TV, GAMER, ARTIST, DANCER, WRITER]
-          example: [SPORT, GAMER]
+          example: ["SPORT", "GAMER"]
         lookingForRoomies:
           type: array
           items:
             type: string
             enum: [SMOKER, STUDENT, PET_LOVER, PET_OWNER, VEGETARIAN, CLEAN, NIGHT_WORKER, IN_RELATIONSHIP, KOSHER, JEWISH, MUSLIM, CHRISTIAN, REMOTE_WORKER, ATHEIST, QUIET]
-          example: [QUIET, NIGHT_WORKER]
+          example: ["QUIET", "NIGHT_WORKER"]
         condoPreference:
           type: array
           items:
             type: string
             enum: [BALCONY, ELEVATOR, PET_ALLOWED, SHELTER, FURNISHED, PARKING]
-          example: [BALCONY, ELEVATOR]
+          example: ["BALCONY", "ELEVATOR"]
         email:
           type: string
-          example: ofek@gmail.com
+          example: "ofek@gmail.com"
         password:
           type: string
-          example: 123456
-        profileImage:
+          example: "123456"
+        profilePicture:
           type: string
           nullable: true
-          example: https://example.com/profile.jpg
+          example: "https://example.com/profile.jpg"
+
+    PropertyOwnerUser:
+      type: object
+      description: Model representing a property owner user who is looking for roommates
+      required:
+        - fullName
+        - phoneNumber
+        - email
+        - password
+        - profilePicture
+      properties:
+        fullName:
+          type: string
+          example: "David Cohen"
+        phoneNumber:
+          type: string
+          example: "054-9876543"
+        email:
+          type: string
+          example: "david@gmail.com"
+        password:
+          type: string
+          example: "abcdef"
+        profilePicture:
+          type: string
+          nullable: true
+          example: "https://example.com/owner.jpg"
+
+    Property:
+      type: object
+      description: Model representing a property
+      required:
+        - type
+        - address
+        - title
+        - roommates
+        - roomsNumber
+        - bathrooms
+        - floor
+        - size
+        - pricePerMonth
+        - features
+        - photos
+      properties:
+        type:
+          type: string
+          enum: [ROOM, APARTMENT]
+          example: "APARTMENT"
+        address:
+          type: string
+          example: "123 Main St, Tel Aviv"
+        title:
+          type: string
+          example: "Luxury Apartment"
+        roommates:
+          type: integer
+          example: 3
+        roomsNumber:
+          type: integer
+          example: 4
+        bathrooms:
+          type: integer
+          example: 2
+        floor:
+          type: integer
+          example: 5
+        size:
+          type: integer
+          example: 120
+        pricePerMonth:
+          type: integer
+          example: 7000
+        features:
+          type: array
+          items:
+            type: string
+            enum: [BALCONY, ELEVATOR, PET_ALLOWED, SHELTER, FURNISHED, PARKING]
+          example: ["BALCONY", "ELEVATOR"]
+        photos:
+          type: array
+          items:
+            type: string
+          example: ["https://example.com/image1.jpg", "https://example.com/image2.jpg"]
+
 servers:
   - url: http://localhost:8080
     description: Local server

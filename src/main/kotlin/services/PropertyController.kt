@@ -3,24 +3,31 @@ package com.services
 
 import com.models.Property
 import com.database.DatabaseManager
+import org.litote.kmongo.MongoOperator
 
-class PropertyController {
+object PropertyController {
 
-    private val propertyCollection = DatabaseManager.getPropertiesCollection()
-        ?: throw IllegalStateException("Properties collection not initialized")
-
-    suspend fun uploadApartment(ownerId: String, property: Property): Result<Property> {
-        if (ownerId.isBlank()) {
-            return Result.failure(Exception("Owner ID cannot be null or empty"))
+    suspend fun uploadProperty(ownerId: String, property: Property): Map<String, Any> {
+        val existingOwner = DatabaseManager.getOwnerById(ownerId)
+        if (existingOwner == null) {
+            return mapOf("error" to "Owner does not exist.")
         }
 
         val propertyWithOwner = property.copy(ownerId = ownerId)
 
-        return try {
-            propertyCollection.insertOne(propertyWithOwner)
-            Result.success(propertyWithOwner)
-        } catch (e: Exception) {
-            Result.failure(e)
+        val insertedProperty = DatabaseManager.insertProperty(propertyWithOwner)
+
+        return if (insertedProperty != null) {
+            mapOf(
+                "propertyId" to (MongoOperator.id ?: ""),
+                "message" to "Property successfully added."
+            )
+        } else {
+            mapOf("error" to "Failed to create property.")
         }
+    }
+
+    suspend fun getPropertiesByOwnerId(ownerId: String): List<Property> {
+        return DatabaseManager.getPropertiesByOwnerId(ownerId)
     }
 }
