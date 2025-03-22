@@ -111,8 +111,94 @@ paths:
         '500':
           description: Internal server error
 
+  /match/feed/{seekerId}:
+    get:
+      tags:
+        - Matching
+      summary: Get next match for seeker
+      description: Returns a single match for the seeker from the current batch. Once the batch is exhausted, it returns new ones.
+      parameters:
+        - name: seekerId
+          in: path
+          required: true
+          description: The ID of the roommate seeker
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A single match returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Match'
+        '204':
+          description: No more matches
+        '400':
+          description: Bad request (missing seekerId)
+
+  /match/like/{seekerId}/{matchId}:
+    post:
+      tags:
+        - Matching
+      summary: Like a match
+      description: Saves the liked match for the seeker and stores it in the database
+      parameters:
+        - name: seekerId
+          in: path
+          required: true
+          description: ID of the user who liked the match
+          schema:
+            type: string
+        - name: matchId
+          in: path
+          required: true
+          description: ID of the match to like
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Match successfully liked
+        '400':
+          description: Match could not be saved or invalid parameters
+
 components:
   schemas:
+    Match:
+      type: object
+      description: Match object that includes matched roommates and property score
+      required:
+        - seekerId
+        - propertyId
+        - roommateMatches
+        - propertyMatchScore
+      properties:
+        seekerId:
+          type: string
+          example: "65fa3d"
+        propertyId:
+          type: string
+          example: "65f9bd"
+        roommateMatches:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoommateMatch'
+        propertyMatchScore:
+          type: integer
+          example: 72
+
+    RoommateMatch:
+      type: object
+      required:
+        - roommateId
+        - matchScore
+      properties:
+        roommateId:
+          type: string
+          example: "65fa3d..."
+        matchScore:
+          type: integer
+          example: 78
+
     RegisterResponse:
       type: object
       description: Model representing a response to a user registration request
@@ -169,6 +255,11 @@ components:
         - attributes
         - hobbies
         - lookingForRoomies
+        - roommatesNumber
+        - minPropertySize
+        - maxPropertySize
+        - minPrice
+        - maxPrice
         - condoPreference
         - email
         - password
@@ -211,6 +302,21 @@ components:
               isDealbreaker: true
             - attribute: "NIGHT_WORKER"
               isDealbreaker: false
+        roommatesNumber:
+            type: integer
+            example: 2
+        minPropertySize:
+            type: integer
+            example: 65
+        maxPropertySize:
+            type: integer
+            example: 80
+        minPrice:
+            type: integer
+            example: 4500
+        maxPrice:
+            type: integer
+            example: 8000
         condoPreference:
           type: array
           items:
@@ -259,10 +365,11 @@ components:
       type: object
       description: Model representing a property
       required:
+        - available
         - type
         - address
         - title
-        - roommates
+        - canContainRoommates
         - roomsNumber
         - bathrooms
         - floor
@@ -271,6 +378,9 @@ components:
         - features
         - photos
       properties:
+        available:
+          type: boolean
+          example: true
         type:
           type: string
           enum: [ROOM, APARTMENT]
@@ -281,7 +391,7 @@ components:
         title:
           type: string
           example: "Luxury Apartment"
-        roommates:
+        canContainRoommates:
           type: integer
           example: 3
         roomsNumber:
@@ -310,6 +420,8 @@ components:
           items:
             type: string
           example: ["https://example.com/image1.jpg", "https://example.com/image2.jpg"]
+
+
 
 servers:
   - url: http://localhost:8080

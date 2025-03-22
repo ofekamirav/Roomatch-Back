@@ -12,13 +12,6 @@ data class Match(
     val propertyId: String,
     val roommateMatches: List<RoommateMatch> = emptyList(),
     val propertyMatchScore: Int,
-
     )
-
-@Serializable
-data class RoommateMatch(
-    val roommateId: String,
-    val matchScore: Int,
-)
 
 
