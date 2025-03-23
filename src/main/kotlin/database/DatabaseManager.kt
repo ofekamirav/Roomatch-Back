@@ -19,7 +19,6 @@ object DatabaseManager {
     private var ownersCollection: CoroutineCollection<PropertyOwnerUser>? = null
     private var propertiesCollection: CoroutineCollection<Property>? = null
     private var matchesCollection: CoroutineCollection<Match>? = null
-    private var userMatchPreferenceCollection: CoroutineCollection<UserMatchPreference>? = null
     private val logger = LoggerFactory.getLogger(DatabaseManager::class.java)
 
     init {
@@ -29,7 +28,6 @@ object DatabaseManager {
             ownersCollection = database?.getCollection("owners")
             propertiesCollection = database?.getCollection("properties")
             matchesCollection = database?.getCollection("matches")
-            userMatchPreferenceCollection = database?.getCollection("userMatchPreference")
         } catch (e: Exception) {
             logger.error("Error in init database", e)
         }
@@ -223,41 +221,6 @@ object DatabaseManager {
             null
         }
     }
-//---------------------------UserMatchPreference------------------------------------------------------------------------------
-
-    fun getUserMatchPreferenceCollection(): CoroutineCollection<UserMatchPreference>? {
-        return userMatchPreferenceCollection
-    }
-
-    suspend fun insertUserMatchPreference(userMatchPreference: UserMatchPreference): UserMatchPreference? {
-        return try {
-            userMatchPreferenceCollection?.insertOne(userMatchPreference)
-            userMatchPreference
-        } catch (e: Exception) {
-            logger.error("Error inserting userMatchPreference", e)
-            null
-        }
-    }
-
-    suspend fun getUserMatchPreferenceByUserId(userId: String): UserMatchPreference? {
-        return try {
-            userMatchPreferenceCollection?.findOne(UserMatchPreference::userId eq userId)
-        } catch (e: Exception) {
-            logger.error("Error fetching userMatchPreference by userId", e)
-            null
-        }
-    }
-
-    suspend fun updateUserMatchPreference(userId: String, userMatchPreference: UserMatchPreference): Boolean {
-        return try {
-            userMatchPreferenceCollection?.updateOne(UserMatchPreference::userId eq userId, userMatchPreference)
-            true
-        } catch (e: Exception) {
-            logger.error("Error updating userMatchPreference", e)
-            false
-        }
-    }
-
 
 
 }

@@ -111,12 +111,12 @@ paths:
         '500':
           description: Internal server error
 
-  /match/feed/{seekerId}:
+  /match/next/{seekerId}:
     get:
       tags:
         - Matching
       summary: Get next match for seeker
-      description: Returns a single match for the seeker from the current batch. Once the batch is exhausted, it returns new ones.
+      description: Returns a single match for the seeker.
       parameters:
         - name: seekerId
           in: path
@@ -136,48 +136,27 @@ paths:
         '400':
           description: Bad request (missing seekerId)
 
-  /match/like/{seekerId}/{matchId}:
-    post:
-      tags:
-        - Matching
-      summary: Like a match
-      description: Saves the liked match for the seeker and stores it in the database
-      parameters:
-        - name: seekerId
-          in: path
-          required: true
-          description: ID of the user who liked the match
-          schema:
-            type: string
-        - name: matchId
-          in: path
-          required: true
-          description: ID of the match to like
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Match successfully liked
-        '400':
-          description: Match could not be saved or invalid parameters
-
 components:
   schemas:
     Match:
       type: object
       description: Match object that includes matched roommates and property score
       required:
+        - id
         - seekerId
         - propertyId
         - roommateMatches
         - propertyMatchScore
       properties:
+        id:
+          type: string
+          example: "65f9bd..."
         seekerId:
           type: string
-          example: "65fa3d"
+          example: "65fa3d.."
         propertyId:
           type: string
-          example: "65f9bd"
+          example: "65f9bd.."
         roommateMatches:
           type: array
           items:
@@ -286,7 +265,7 @@ components:
           items:
             type: string
             enum: [SMOKER, STUDENT, PET_LOVER, PET_OWNER, VEGETARIAN, CLEAN, NIGHT_WORKER, IN_RELATIONSHIP, KOSHER, JEWISH, MUSLIM, CHRISTIAN, REMOTE_WORKER, ATHEIST, QUIET]
-          example: ["CLEAN", "QUIET"]
+          example: ["CLEAN", "QUIET", "VEGETARIAN"]
         hobbies:
           type: array
           items:
@@ -302,21 +281,23 @@ components:
               isDealbreaker: true
             - attribute: "NIGHT_WORKER"
               isDealbreaker: false
+            - attribute: "JEWISH"
+              isDealbreaker: false
         roommatesNumber:
-            type: integer
-            example: 2
+          type: integer
+          example: 2
         minPropertySize:
-            type: integer
-            example: 65
+          type: integer
+          example: 65
         maxPropertySize:
-            type: integer
-            example: 80
+          type: integer
+          example: 80
         minPrice:
-            type: integer
-            example: 4500
+          type: integer
+          example: 4500
         maxPrice:
-            type: integer
-            example: 8000
+          type: integer
+          example: 8000
         condoPreference:
           type: array
           items:

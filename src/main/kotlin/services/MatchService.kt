@@ -2,195 +2,180 @@ package com.services
 
 import com.database.DatabaseManager
 import com.models.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import org.slf4j.LoggerFactory
+import java.util.*
 
 object MatchService {
 
-    private val userPreferencesCache: MutableMap<String, UserMatchPreference> = mutableMapOf()
-    private val userMatchFeed: MutableMap<String, Pair<List<Match>, Int>> = mutableMapOf()
+    private val logger = LoggerFactory.getLogger(MatchService::class.java)
+    val userMatchCache: MutableMap<String, List<Match>> = mutableMapOf()
+    val userSwipes: MutableMap<String, MutableSet<String>> = mutableMapOf()
+    private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
 
+
+    //Calculate a Match between a seeker and a property and roommates
     suspend fun performMatch(seekerId: String): List<Match>? {
-        val seeker = DatabaseManager.getRoommateById(seekerId) ?: return null
+        val seeker = DatabaseManager.getRoommateById(seekerId)
+        if (seeker == null) {
+            logger.warn("Seeker not found for seekerId: $seekerId")
+            return null
+        }
 
-        // Get user preferences, create if doesn't exist
-        val userPreference = getUserMatchPreference(seekerId)
+        val allPropertiesDeferred = coroutineScope.async { DatabaseManager.getAllAvailableProperties() }
+        val allRoommatesDeferred = coroutineScope.async { DatabaseManager.getAllRoommates() }
+
+        //wait for the properties and roommates to be fetched
+        val allProperties = allPropertiesDeferred.await()
+        val allRoommates = allRoommatesDeferred.await()
 
         // Filter available properties based on available slots and seeker preferences
-        val potentialProperties = DatabaseManager.getAllAvailableProperties().filter { property ->
+        val potentialProperties = allProperties.filter { property ->
             when (property.type) {
-                PropertyType.ROOM -> property.CurrentRoommatesIds.size < property.canContainRoommates!! // Room: must have a slot available
-                PropertyType.APARTMENT -> property.CurrentRoommatesIds.isEmpty() // Apartment: must be empty
-            } && (property.pricePerMonth == null || property.pricePerMonth in seeker.minPrice..seeker.maxPrice) && (property.size == null || property.size in seeker.minPropertySize..seeker.maxPropertySize)
+                PropertyType.ROOM ->
+                    property.CurrentRoommatesIds.size < property.canContainRoommates!! &&
+                            (property.pricePerMonth == null || property.pricePerMonth in seeker.minPrice..seeker.maxPrice) &&
+                            (property.size == null || property.size in seeker.minPropertySize..seeker.maxPropertySize)
+                PropertyType.APARTMENT ->
+                    property.CurrentRoommatesIds.isEmpty() &&
+                            (property.pricePerMonth == null || property.pricePerMonth in seeker.minPrice..seeker.maxPrice) &&
+                            (property.size == null || property.size in seeker.minPropertySize..seeker.maxPropertySize)
+            }
         }
+        logger.info("Potential properties count: ${potentialProperties.size}")
 
         val matches: MutableList<Match> = mutableListOf()
 
         for (property in potentialProperties) {
-            if (shouldSkipProperty(property,userPreference)) {
-                //continue to the next property in the loop
-                continue;
+
+            //Filter out roommates that already live in this ROOM
+            val roommatesInProperty = if (property.type == PropertyType.ROOM) property.CurrentRoommatesIds else emptyList()
+
+            val potentialRoommates = allRoommates.filter { roommate ->
+                roommate.id != seekerId &&
+                        (roommate.roommatesNumber == seeker.roommatesNumber) &&
+                        !roommatesInProperty.contains(roommate.id) // Exclude existing roommate
             }
 
-            // Calculate property match score
-            val propertyMatchScore = calculatePropertyMatchScore(seeker, property, userPreference)
+            // Create Random list of roommates
+            val random = Random()
+            val shuffledRoommates = potentialRoommates.shuffled(random)
 
-            // Filter roommates
-            val filteredRoommates = filterPotentialRoommates(seeker);
-            val propertyRoommateMatches = updateRoommatesMatches(filteredRoommates,seeker,userPreference);
+            // Calculate roommate match score
+            val roommateMatches = shuffledRoommates.map { roommate ->
+                val roommateMatchScore = calculateRoommateMatchScore(seeker, roommate)
+                logger.info("Roommate match score: $roommateMatchScore")
+                RoommateMatch(roommate.id, roommateMatchScore)
+            }.filter { it.matchScore >= 55 }
 
+            val combineRoommates = roommateMatches.take(seeker.roommatesNumber)
 
-            if(propertyMatchScore >= 55 && propertyRoommateMatches.size == seeker.roommatesNumber){
-                // Create Match object
-                val match = Match(
+            if(combineRoommates.size<seeker.roommatesNumber) continue
+
+            val match = Match(
                     seekerId = seekerId,
                     propertyId = property.id,
-                    roommateMatches = propertyRoommateMatches,
-                    propertyMatchScore = propertyMatchScore
+                    roommateMatches = combineRoommates,
+                    propertyMatchScore = calculatePropertyMatchScore(seeker, property)
                 )
                 matches.add(match)
             }
-        }
+
+        userMatchCache[seekerId] = matches
+        logger.info("performMatch: matches.size = ${matches.size}")
+
 
         return matches
     }
 
-    private suspend fun getUserMatchPreference(userId: String): UserMatchPreference {
-        return userPreferencesCache.getOrPut(userId) {
-            DatabaseManager.getUserMatchPreferenceByUserId(userId) ?: UserMatchPreference(userId)
-        }
-    }
 
-    private fun calculatePropertyMatchScore(seeker: RoommateUser, property: Property, userPreference: UserMatchPreference): Int{
-        var score = 0
-        // Condo preferences
+    // calculatePropertyMatchScore function
+    private fun calculatePropertyMatchScore(seeker: RoommateUser, property: Property): Int {
+        var score = 50
+        var maxScore = 50
+        val numPreferences = seeker.condoPreference.size
+
+        maxScore += numPreferences * 20
+
         for (preference in seeker.condoPreference) {
             if (preference in property.features) {
-                score += 10
+                score += 20
             }
         }
 
-        if (property.id in userPreference.likePropertyIds)
-            score -= 50
+        val normalizedScore = (score.toDouble() / maxScore.toDouble()) * 100
+        logger.info("calculatePropertyMatchScore: score= $normalizedScore ")
+        return normalizedScore.toInt().coerceAtMost(100) // Normalize to max 100
 
-        if (property.id in userPreference.dislikePropertyIds)
-            score += 50
-
-        return score
     }
 
-    private fun calculateRoommateMatchScore(seeker: RoommateUser, roommate: RoommateUser,userPreference:UserMatchPreference): Int{
-        var score = 0
-        // Condo preferences
-        for (preference in seeker.condoPreference) {
-            if (preference in roommate.condoPreference) {
-                score += 10
-            }
-        }
 
-        //Roommate preferences
+    // calculateRoommateMatchScore function
+    private fun calculateRoommateMatchScore(seeker: RoommateUser, roommate: RoommateUser): Int {
+        var score = 0
+        var maxScore = 0
+
         for (preference in seeker.lookingForRoomies) {
             if (preference.isDealbreaker) {
+                maxScore += 50
                 if (preference.attribute in roommate.attributes) {
-                    score -= 50
+                    score += 50
+                } else {
+                    return 0
                 }
             } else {
+                maxScore += 10
                 if (preference.attribute in roommate.attributes) {
                     score += 10
                 }
             }
         }
 
-        if (roommate.id in userPreference.likeRoommateIds)
-            score -= 50
+        if (maxScore == 0) return 0
 
-        if (roommate.id in userPreference.dislikeRoommateIds)
-            score += 50
+        //Check to make the property feature also adds to the roommate match score
+        score += if(seeker.condoPreference.intersect(roommate.condoPreference.toSet()).isNotEmpty()) 15 else 0
 
-        return score
+        val normalizedScore = (score.toDouble() / maxScore.toDouble()) * 100
+        return normalizedScore.toInt().coerceAtMost(100) // Normalize to max 100
     }
 
-    //Filter the property if inside are users that dislike
-    private suspend fun shouldSkipProperty(property: Property, userPreference: UserMatchPreference): Boolean {
-        if(property.type == PropertyType.ROOM){
-            // Get roommates in property
-            val roommatesInProperty = DatabaseManager.getRoommatesByIds(property.CurrentRoommatesIds)
 
-            for(roommate in roommatesInProperty){
-                if(roommate.id in userPreference.dislikeRoommateIds){
-                    // Skip this property if any of the roommates are disliked
-                    //don't add this property to the matches
-                    return true
-                }
-            }
+    suspend fun getNextMatchForSwipe(seekerId: String): Match? {
+        logger.info("getNextMatchForSwipe: seekerId = $seekerId")
+
+        //Attempt to get from cache, if empty, perform a match to set the value in cache
+        var matches = userMatchCache[seekerId]
+
+        if (matches == null) {
+            logger.info("getNextMatchForSwipe: No matches in cache, performing new match")
+            matches = performMatch(seekerId)
         }
-        return false;
-    }
-
-    //Filter Roomates and save in list to upload to response
-    private suspend fun filterPotentialRoommates(seeker:RoommateUser) :  List<RoommateUser> {
-        val filteredRoommates = DatabaseManager.getAllRoommates().filter { roommate ->
-            roommate.id != seeker.id && (roommate.roommatesNumber == seeker.roommatesNumber)
-        }
-        return filteredRoommates;
-    }
-
-    //Filter Roomates and save in list to upload to response
-    private fun updateRoommatesMatches(roommates:List<RoommateUser>,seeker:RoommateUser,userPreference:UserMatchPreference) :  MutableList<RoommateMatch> {
-        val roommateMatches: MutableList<RoommateMatch> = mutableListOf()
-        for (roommate in roommates) {
-            val roommateMatchScore = calculateRoommateMatchScore(seeker, roommate, userPreference)
-            if(roommateMatchScore >= 55)
-                roommateMatches.add(RoommateMatch(roommate.id, roommateMatchScore))
-        }
-        return roommateMatches;
-    }
-
-    //LikeMatch so we can save the match in the user db
-    suspend fun LikeMatch(seekerId: String, matchId: String): Boolean {
-        val match = DatabaseManager.getMatchById(matchId) ?: return false
-        if (match.seekerId != seekerId) return false
-
-        val saved = DatabaseManager.insertMatch(match)
-
-        return saved != null
-    }
-
-
-    suspend fun getMatchBatch(seekerId: String, limit: Int): List<Match> {
-        val allMatches = performMatch(seekerId) ?: return emptyList()
-        val userPreference = getUserMatchPreference(seekerId)
-
-        val unseenMatches = allMatches.filterNot { match ->
-            userPreference.likePropertyIds.contains(match.propertyId) ||
-                    userPreference.dislikePropertyIds.contains(match.propertyId) ||
-                    match.roommateMatches.any { userPreference.likeRoommateIds.contains(it.roommateId) ||
-                            userPreference.dislikeRoommateIds.contains(it.roommateId) }
+        //If matches is still empty, return null
+        if (matches == null || matches.isEmpty()) {
+            logger.info("getNextMatchForSwipe: No matches found after performing match")
+            userMatchCache.remove(seekerId)
+            return null
         }
 
-        return unseenMatches.take(limit)
+        //Get the first match before removing it
+        val match = matches.first()
+        logger.info("getNextMatchForSwipe: Returning match with id = ${match.id}")
+
+        //Update the cache, removeing the first one
+        userMatchCache[seekerId] = matches.drop(1)
+
+        return match
     }
 
-    suspend fun getNextMatchFromFeed(seekerId: String): Match? {
-        val (batch, index) = userMatchFeed[seekerId] ?: run {
-            val newBatch = getMatchBatch(seekerId, 5)
-            if (newBatch.isEmpty()) return null
-            userMatchFeed[seekerId] = newBatch to 1 // index starts at 1
-            return newBatch[0]
-        }
-
-        if (index >= batch.size) {
-            val newBatch = getMatchBatch(seekerId, 5)
-            if (newBatch.isEmpty()) return null
-            userMatchFeed[seekerId] = newBatch to 1
-            return newBatch[0]
-        }
-
-        val nextMatch = batch[index]
-        userMatchFeed[seekerId] = batch to (index + 1)
-        return nextMatch
+    //Clear the feed for the user
+    fun clearUserFeed(seekerId: String) {
+        userMatchCache.remove(seekerId)
+        logger.info("Cleared match feed for seeker $seekerId")
     }
-
-
 
 
 

@@ -14,7 +14,7 @@ data class Property(
     val address: String?=null,
     val title: String?=null,
     val canContainRoommates: Int?=null,
-    val CurrentRoommatesIds: List<String> = emptyList(),
+    var CurrentRoommatesIds: List<String> = emptyList(),
     val roomsNumber: Int?=null,
     val bathrooms: Int?=null,
     val floor: Int?=null,
