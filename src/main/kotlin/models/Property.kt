@@ -9,10 +9,12 @@ import org.bson.types.ObjectId
 data class Property(
     @BsonId @Contextual val id: String = ObjectId().toHexString(), // MongoDB-generated ID
     val ownerId: String?=null,
+    val available: Boolean?=null,
     val type: PropertyType,
     val address: String?=null,
     val title: String?=null,
-    val roommates: Int?=null,
+    val canContainRoommates: Int?=null,
+    var CurrentRoommatesIds: List<String> = emptyList(),
     val roomsNumber: Int?=null,
     val bathrooms: Int?=null,
     val floor: Int?=null,

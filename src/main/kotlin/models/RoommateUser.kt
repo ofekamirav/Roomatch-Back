@@ -21,6 +21,11 @@ data class RoommateUser(
     val attributes: List<Attribute>,
     val hobbies: List<Hobby>,
     val lookingForRoomies: List<LookingForRoomiesPreference>,
+    val roommatesNumber: Int,
+    val minPropertySize: Int,
+    val maxPropertySize: Int,
+    val minPrice: Int,
+    val maxPrice: Int,
     val condoPreference: List<CondoPreference>,
 )
 
