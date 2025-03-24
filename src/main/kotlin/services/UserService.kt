@@ -64,6 +64,10 @@ object UserService {
         }
     }
 
+    suspend fun getRoommateById(id: String): RoommateUser? {
+        return DatabaseManager.getRoommateById(id)
+    }
+
 
 
 }

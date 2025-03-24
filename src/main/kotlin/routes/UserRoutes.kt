@@ -37,6 +37,22 @@ fun Routing.configureUserRoutes() {
                 )
             }
         }
+
+        get("/{id}") {
+            val id = call.parameters["id"]
+            if (id == null) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "ID is required"))
+                return@get
+            }
+
+            val user = UserService.getRoommateById(id)
+
+            if (user != null) {
+                call.respond(HttpStatusCode.OK, user)
+            } else {
+                call.respond(HttpStatusCode.NotFound, mapOf("error" to "User not found"))
+            }
+        }
     }
     route("/owners"){
         //Register a property owner user

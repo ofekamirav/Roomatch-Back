@@ -136,6 +136,31 @@ paths:
         '400':
           description: Bad request (missing seekerId)
 
+  /roommates/{seekerId}:
+    get:
+      tags:
+        - Roommate
+      summary: Get roommate by ID
+      description: Returns a roommate user by ID
+      parameters:
+        - name: seekerId
+          in: path
+          required: true
+          description: The ID of the roommate user
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Roommate found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoommateUser'
+        '404':
+          description: Roommate not found
+        '500':
+          description: Internal server error
+
 components:
   schemas:
     Match:

@@ -15,8 +15,6 @@ object MatchService {
     val userSwipes: MutableMap<String, MutableSet<String>> = mutableMapOf()
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
-
-
     //Calculate a Match between a seeker and a property and roommates
     suspend fun performMatch(seekerId: String): List<Match>? {
         val seeker = DatabaseManager.getRoommateById(seekerId)
