@@ -194,11 +194,15 @@ components:
       type: object
       required:
         - roommateId
+        - roommateName
         - matchScore
       properties:
         roommateId:
           type: string
           example: "65fa3d..."
+        roommateName:
+          type: string
+          example: "Ofek Amirav"
         matchScore:
           type: integer
           example: 78
