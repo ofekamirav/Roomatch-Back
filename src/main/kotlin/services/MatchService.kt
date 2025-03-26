@@ -66,12 +66,12 @@ object MatchService {
             val roommateMatches = shuffledRoommates.map { roommate ->
                 val roommateMatchScore = calculateRoommateMatchScore(seeker, roommate)
                 logger.info("Roommate match score: $roommateMatchScore")
-                RoommateMatch(roommate.id, roommateMatchScore)
+                RoommateMatch(roommate.id, roommate.fullName, roommateMatchScore)
             }.filter { it.matchScore >= 55 }
 
             val combineRoommates = roommateMatches.take(seeker.roommatesNumber)
 
-            if(combineRoommates.size<seeker.roommatesNumber) continue
+            //if(combineRoommates.size<seeker.roommatesNumber) continue
 
             val match = Match(
                     seekerId = seekerId,
@@ -116,29 +116,31 @@ object MatchService {
         var score = 0
         var maxScore = 0
 
+        // Calculate score for lookingForRoomies preferences
         for (preference in seeker.lookingForRoomies) {
-            if (preference.isDealbreaker) {
-                maxScore += 50
-                if (preference.attribute in roommate.attributes) {
-                    score += 50
-                } else {
-                    return 0
-                }
-            } else {
-                maxScore += 10
-                if (preference.attribute in roommate.attributes) {
-                    score += 10
-                }
+            val preferenceScore = if (preference.isDealbreaker) 50 else 10
+            maxScore += preferenceScore
+            if (preference.attribute in roommate.attributes) {
+                score += preferenceScore
+            } else if (preference.isDealbreaker) {
+                return 0 // Dealbreaker logic remains
             }
         }
 
-        if (maxScore == 0) return 0
+        // Calculate score for condo preferences
+        val condoPreferencesMatch = seeker.condoPreference.intersect(roommate.condoPreference.toSet())
+        val condoScore = condoPreferencesMatch.size * 5 // Example: 5 points per match
+        score += condoScore
+        maxScore += seeker.condoPreference.size * 5 // Update maxScore
 
-        //Check to make the property feature also adds to the roommate match score
-        score += if(seeker.condoPreference.intersect(roommate.condoPreference.toSet()).isNotEmpty()) 15 else 0
+        // Normalize the score
+        val normalizedScore = if (maxScore > 0) {
+            (score.toDouble() / maxScore.toDouble()) * 100
+        } else {
+            0.0
+        }
 
-        val normalizedScore = (score.toDouble() / maxScore.toDouble()) * 100
-        return normalizedScore.toInt().coerceAtMost(100) // Normalize to max 100
+        return normalizedScore.toInt().coerceAtMost(100)
     }
 
 
