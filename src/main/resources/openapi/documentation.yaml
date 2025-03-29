@@ -53,7 +53,7 @@ paths:
         '500':
           description: Internal server error
 
-  /properties/upload/{ownerId}:
+  /properties/{ownerId}:
     post:
       tags:
         - Properties
@@ -84,7 +84,6 @@ paths:
         '500':
           description: Internal server error
 
-  /properties/{ownerId}:
     get:
       tags:
         - Properties
@@ -111,7 +110,8 @@ paths:
         '500':
           description: Internal server error
 
-  /match/next/{seekerId}:
+
+  /match/{seekerId}:
     get:
       tags:
         - Matching

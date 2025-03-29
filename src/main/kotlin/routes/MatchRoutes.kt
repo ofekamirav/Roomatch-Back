@@ -8,7 +8,7 @@ import io.ktor.server.routing.*
 
 fun Route.configureMatchRoutes() {
     route("/match") {
-        get("/next/{seekerId}") {
+        get("/{seekerId}") {
             val seekerId = call.parameters["seekerId"]
 
             if (seekerId == null) {
