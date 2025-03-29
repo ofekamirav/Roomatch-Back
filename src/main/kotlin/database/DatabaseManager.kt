@@ -9,11 +9,19 @@ import org.litote.kmongo.coroutine.coroutine
 import org.litote.kmongo.eq
 import org.litote.kmongo.`in`
 import org.slf4j.LoggerFactory
-
+import io.github.cdimascio.dotenv.dotenv
+import java.net.URLEncoder
 
 
 object DatabaseManager {
-    private var client = KMongo.createClient("mongodb://localhost:27017")
+
+    private val dotenv = dotenv()
+    private val mongoUser: String = URLEncoder.encode(dotenv["MONGODB_USER"], "UTF-8") ?: error("MONGODB_USER is not set in .env")
+    private val mongoPassword: String = URLEncoder.encode(dotenv["MONGODB_PASSWORD"],"UTF-8") ?: error("MONGODB_PASSWORD is not set in .env")
+    private val mongoCluster: String = dotenv["MONGODB_CLUSTER"] ?: error("MONGODB_CLUSTER is not set in .env")
+
+    private val connectionString: String = "mongodb+srv://$mongoUser:$mongoPassword@$mongoCluster/?retryWrites=true&w=majority&appName=Cluster0"
+    private var client = KMongo.createClient(connectionString)
     private var database: CoroutineDatabase? = null
     private var roommatesCollection: CoroutineCollection<RoommateUser>? = null
     private var ownersCollection: CoroutineCollection<PropertyOwnerUser>? = null
