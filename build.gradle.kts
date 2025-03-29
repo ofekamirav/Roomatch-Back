@@ -30,6 +30,7 @@ dependencies {
     implementation(libs.java.jwt)
     implementation(libs.kmongo.coroutine)
     implementation(libs.logback.classic)
+    implementation(libs.dotenv.kotlin)
     implementation(libs.ktor.server.config.yaml)
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.kotlin.test.junit)

@@ -16,6 +16,9 @@ bin/
 !**/src/main/**/bin/
 !**/src/test/**/bin/
 
+### Private ###
+.env
+
 ### IntelliJ IDEA ###
 .idea
 *.iws
