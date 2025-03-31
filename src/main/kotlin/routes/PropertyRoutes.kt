@@ -11,7 +11,7 @@ fun Routing.configurePropertyRoutes() {
 
     route("/properties") {
         //Add property to specific owner
-        post("/upload/{ownerId}") {
+        post("/{ownerId}") {
             try {
                 val ownerId = call.parameters["ownerId"]
                 if (ownerId == null) {
