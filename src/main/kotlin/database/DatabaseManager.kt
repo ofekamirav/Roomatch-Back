@@ -230,5 +230,15 @@ object DatabaseManager {
         }
     }
 
+    suspend fun getMatchesBySeekerId(seekerId: String): List<Match> {
+        return try {
+            matchesCollection?.find(Match::seekerId eq seekerId)?.toList() ?: emptyList()
+        } catch (e: Exception) {
+            logger.error("Error fetching matches by seeker ID", e)
+            emptyList()
+        }
+    }
+
+
 
 }

@@ -1,9 +1,6 @@
 package com
 
-import com.routes.configureAuthRoutes
-import com.routes.configureMatchRoutes
-import com.routes.configurePropertyRoutes
-import com.routes.configureUserRoutes
+import com.routes.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.swagger.*
 import io.ktor.server.response.*
@@ -15,5 +12,6 @@ fun Application.configureRouting() {
         configurePropertyRoutes()
         configureAuthRoutes()
         configureMatchRoutes()
+        configureLikeRoutes()
     }
 }

@@ -161,6 +161,59 @@ paths:
         '500':
           description: Internal server error
 
+  /likes:
+    post:
+      tags:
+        - Likes
+      summary: Save a liked match
+      description: Saves a match that the seeker has liked.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Match'
+      responses:
+        '201':
+          description: Match successfully saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Match'
+        '400':
+          description: Error creating liked match
+        '500':
+          description: Internal server error
+
+  /likes/{seekerId}:
+    get:
+      tags:
+        - Likes
+      summary: Get all liked matches by seeker
+      description: Retrieves all matches that a specific seeker has liked.
+      parameters:
+        - name: seekerId
+          in: path
+          required: true
+          description: The ID of the seeker (roommate user)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Matches found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Match'
+        '404':
+          description: No matches found
+        '500':
+          description: Internal server error
+
+
+
 components:
   schemas:
     Match:
@@ -430,6 +483,7 @@ components:
           items:
             type: string
           example: ["https://example.com/image1.jpg", "https://example.com/image2.jpg"]
+
 
 
 
