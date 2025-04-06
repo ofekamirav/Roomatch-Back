@@ -17,7 +17,7 @@ bin/
 !**/src/test/**/bin/
 
 ### Private ###
-!**/src/main/resources/.env
+src/main/resources/.env
 
 ### IntelliJ IDEA ###
 .idea

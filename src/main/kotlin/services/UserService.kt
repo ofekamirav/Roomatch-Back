@@ -21,6 +21,7 @@ object UserService {
         val hashedPassword = Hashing.hashPassword(user.password)
         val accessToken = JWTUtils.generateToken(user.email)
         val refreshToken = JWTUtils.generateRefreshToken(user.email)
+        val roommateType = "Roommate"
 
         val newUser = user.copy(password = hashedPassword, refreshToken = refreshToken)
 
@@ -31,6 +32,7 @@ object UserService {
                 "token" to accessToken,
                 "refreshToken" to refreshToken,
                 "userId" to insertedUser.id,
+                "userType" to roommateType
             )
         } else {
             mapOf("error" to "Failed to create user.")
@@ -48,6 +50,7 @@ object UserService {
         val hashedPassword = Hashing.hashPassword(user.password)
         val accessToken = JWTUtils.generateToken(user.email)
         val refreshToken = JWTUtils.generateRefreshToken(user.email)
+        val ownerType = "PropertyOwner"
 
         val newUser = user.copy(password = hashedPassword, refreshToken = refreshToken)
 
@@ -58,6 +61,7 @@ object UserService {
                 "token" to accessToken,
                 "refreshToken" to refreshToken,
                 "userId" to insertedUser.id,
+                "userType" to ownerType
             )
         } else {
             mapOf("error" to "Failed to create user.")
