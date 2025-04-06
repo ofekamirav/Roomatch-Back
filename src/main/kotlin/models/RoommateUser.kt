@@ -9,6 +9,8 @@ import org.litote.kmongo.Id
 @Serializable
 data class RoommateUser(
     @BsonId @Contextual val id: String = ObjectId().toHexString(), // MongoDB-generated ID
+    val attributeWeights: Map<Attribute, Double> = emptyMap(), // user's choice of weights
+    val condoPreferenceWeights: Map<CondoPreference, Double> = emptyMap(), // same
     val email: String,
     val fullName: String,
     val phoneNumber: String,

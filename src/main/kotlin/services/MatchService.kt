@@ -2,6 +2,7 @@ package com.services
 
 import com.database.DatabaseManager
 import com.models.*
+import com.utils.MatchWeights
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -92,19 +93,26 @@ object MatchService {
 
     // calculatePropertyMatchScore function
     private fun calculatePropertyMatchScore(seeker: RoommateUser, property: Property): Int {
-        var score = 50
-        var maxScore = 50
-        val numPreferences = seeker.condoPreference.size
-
-        maxScore += numPreferences * 20
+        var score = 0.0
+        var maxScore = 0.0
 
         for (preference in seeker.condoPreference) {
+            val weight = seeker.condoPreferenceWeights[preference]
+                ?: MatchWeights.condoPreferenceWeights[preference]
+                ?: MatchWeights.condoMatchWeight
+
+            maxScore += weight
+
             if (preference in property.features) {
-                score += 20
+                score += weight
             }
         }
 
-        val normalizedScore = (score.toDouble() / maxScore.toDouble()) * 100
+        val normalizedScore = if (maxScore > 0){
+            (score / maxScore) * 100
+        }else{
+            0.0
+        }
         logger.info("calculatePropertyMatchScore: score= $normalizedScore ")
         return normalizedScore.toInt().coerceAtMost(100) // Normalize to max 100
 
@@ -113,13 +121,18 @@ object MatchService {
 
     // calculateRoommateMatchScore function
     private fun calculateRoommateMatchScore(seeker: RoommateUser, roommate: RoommateUser): Int {
-        var score = 0
-        var maxScore = 0
+        var score = 0.0
+        var maxScore = 0.0
 
         // Calculate score for lookingForRoomies preferences
         for (preference in seeker.lookingForRoomies) {
-            val preferenceScore = if (preference.isDealbreaker) 50 else 10
+            val preferenceScore = if (preference.isDealbreaker)
+                MatchWeights.dealbreakerWeight
+            else
+                MatchWeights.preferenceWeight
+
             maxScore += preferenceScore
+
             if (preference.attribute in roommate.attributes) {
                 score += preferenceScore
             } else if (preference.isDealbreaker) {
@@ -127,15 +140,21 @@ object MatchService {
             }
         }
 
-        // Calculate score for condo preferences
-        val condoPreferencesMatch = seeker.condoPreference.intersect(roommate.condoPreference.toSet())
-        val condoScore = condoPreferencesMatch.size * 5 // Example: 5 points per match
-        score += condoScore
-        maxScore += seeker.condoPreference.size * 5 // Update maxScore
+        for (preference in seeker.condoPreference) {
+            val weight = seeker.condoPreferenceWeights[preference]
+                ?: MatchWeights.condoPreferenceWeights[preference]
+                ?: MatchWeights.condoMatchWeight
+
+            maxScore += weight
+
+            if (preference in roommate.condoPreference) {
+                score += weight
+            }
+        }
 
         // Normalize the score
         val normalizedScore = if (maxScore > 0) {
-            (score.toDouble() / maxScore.toDouble()) * 100
+            (score / maxScore) * 100
         } else {
             0.0
         }
