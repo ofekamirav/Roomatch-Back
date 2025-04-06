@@ -27,6 +27,7 @@ data class RoommateUser(
     val minPrice: Int,
     val maxPrice: Int,
     val condoPreference: List<CondoPreference>,
+    val personalBio: String? = null,
 )
 
 @Serializable
