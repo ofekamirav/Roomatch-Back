@@ -266,6 +266,7 @@ components:
       required:
         - id
         - token
+        - userType
       properties:
         id:
           type: string
@@ -273,6 +274,9 @@ components:
         token:
           type: string
           example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+        userType:
+          type: string
+          example: "Roommate"
 
     PropertyUploadResponse:
       type: object

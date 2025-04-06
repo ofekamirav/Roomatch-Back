@@ -15,7 +15,7 @@ import kotlinx.serialization.Serializable
 
 
 @Serializable
-data class UserResponse(val token: String?, val userId: String?)
+data class UserResponse(val token: String?, val userId: String?, val userType: String?)
 
 fun Routing.configureUserRoutes() {
 
@@ -30,7 +30,7 @@ fun Routing.configureUserRoutes() {
                 if (result["error"] != null) {
                     call.respond(HttpStatusCode.BadRequest, mapOf("error" to result["error"]))
                 } else {
-                    val response = UserResponse(result["token"].toString(), result["userId"].toString())
+                    val response = UserResponse(result["token"].toString(), result["userId"].toString(), result["userType"].toString())
                     call.respond(HttpStatusCode.Created, response)
                 }
             } catch (e: Exception) {
@@ -84,7 +84,7 @@ fun Routing.configureUserRoutes() {
                 if (result["error"] != null) {
                     call.respond(HttpStatusCode.BadRequest, mapOf("error" to result["error"]))
                 } else {
-                    val response = UserResponse(result["token"].toString(), result["userId"].toString())
+                    val response = UserResponse(result["token"].toString(), result["userId"].toString(), result["userType"].toString())
                     call.respond(HttpStatusCode.Created, response)
                 }
             } catch (e: Exception) {
