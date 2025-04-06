@@ -2,6 +2,9 @@ package com.routes
 
 import com.models.PropertyOwnerUser
 import com.models.RoommateUser
+import com.models.BioRequest
+import com.models.BioResponse
+import com.services.GeminiService
 import com.services.UserService
 import io.ktor.http.*
 import io.ktor.server.request.*
@@ -53,6 +56,22 @@ fun Routing.configureUserRoutes() {
                 call.respond(HttpStatusCode.NotFound, mapOf("error" to "User not found"))
             }
         }
+        post("/generate-bio") {
+            try {
+                val request = call.receive<BioRequest>()
+
+                println("Received BioRequest for user: ${request.fullName}")
+
+                val generatedBio = GeminiService.generateBio(request)
+
+                call.respond(BioResponse(generatedBio))
+
+            } catch (e: Exception) {
+                println("Error generating bio: ${e.message}")
+                e.printStackTrace()
+                call.respond(HttpStatusCode.InternalServerError, mapOf("error" to e.message))
+            }
+        }
     }
     route("/owners"){
         //Register a property owner user
@@ -77,4 +96,5 @@ fun Routing.configureUserRoutes() {
 
         }
     }
+
 }
