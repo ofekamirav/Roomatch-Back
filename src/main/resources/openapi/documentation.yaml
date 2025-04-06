@@ -403,6 +403,7 @@ components:
       required:
         - fullName
         - phoneNumber
+        - birthDate
         - email
         - password
         - profilePicture
@@ -413,6 +414,9 @@ components:
         phoneNumber:
           type: string
           example: "054-9876543"
+        birthDate:
+          type: string
+          example: "1998-06-15"
         email:
           type: string
           example: "david@gmail.com"
