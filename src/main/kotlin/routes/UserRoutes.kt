@@ -19,6 +19,9 @@ data class UserResponse(val token: String?, val userId: String?, val userType: S
 
 fun Routing.configureUserRoutes() {
 
+    get("/api/test") {
+        call.respondText("It works!")
+    }
     route("/roommates") {
         //Register a roommate user
         post("/register") {

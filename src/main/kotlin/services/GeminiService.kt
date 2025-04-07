@@ -6,16 +6,15 @@ import io.github.cdimascio.dotenv.dotenv
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
-import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
+import io.ktor.client.request.post
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.serialization.kotlinx.json.*
+import kotlinx.serialization.json.*
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
+
 
 private val dotenv = dotenv {
     ignoreIfMalformed = true
@@ -29,7 +28,7 @@ private val json = Json {
 object GeminiService {
     private val client = HttpClient(CIO) {
         install(ContentNegotiation) {
-            json()
+            json(json)
         }
     }
 

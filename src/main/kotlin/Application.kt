@@ -12,6 +12,9 @@ fun main(args: Array<String>) {
 fun Application.module() {
     val dotenv = dotenv()
     println("Gemini API Key Loaded: ${dotenv["GEMINI_API_KEY"]?.take(4)}***")
+    val environment = environment.config
+    println("▶▶ Host: ${environment.propertyOrNull("ktor.deployment.host")?.getString()}")
+    println("▶▶ Port: ${environment.propertyOrNull("ktor.deployment.port")?.getString()}")
     configureSerialization()
     configureHTTP()
     configureRouting()
