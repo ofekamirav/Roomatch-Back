@@ -12,8 +12,6 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
 
-
-
 @Serializable
 data class UserResponse(val token: String?, val userId: String?, val userType: String?)
 
@@ -23,13 +21,11 @@ fun Routing.configureUserRoutes() {
         call.respondText("It works!")
     }
     route("/roommates") {
-        //Register a roommate user
+        // Register a roommate user
         post("/register") {
             try {
                 val user = call.receive<RoommateUser>()
-
                 val result = UserService.registerRoommate(user)
-
                 if (result["error"] != null) {
                     call.respond(HttpStatusCode.BadRequest, mapOf("error" to result["error"]))
                 } else {
@@ -37,13 +33,11 @@ fun Routing.configureUserRoutes() {
                     call.respond(HttpStatusCode.Created, response)
                 }
             } catch (e: Exception) {
-                call.respond(
-                    HttpStatusCode.InternalServerError,
-                    mapOf("error" to (e.message ?: "Internal server error"))
-                )
+                call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "Internal server error")))
             }
         }
 
+        // Get roommate by ID
         get("/{id}") {
             val id = call.parameters["id"]
             if (id == null) {
@@ -52,38 +46,31 @@ fun Routing.configureUserRoutes() {
             }
 
             val user = UserService.getRoommateById(id)
-
             if (user != null) {
                 call.respond(HttpStatusCode.OK, user)
             } else {
                 call.respond(HttpStatusCode.NotFound, mapOf("error" to "User not found"))
             }
         }
+
+        // Generate bio with Gemini
         post("/generate-bio") {
             try {
                 val request = call.receive<BioRequest>()
-
-                println("Received BioRequest for user: ${request.fullName}")
-
                 val generatedBio = GeminiService.generateBio(request)
-
                 call.respond(BioResponse(generatedBio))
-
             } catch (e: Exception) {
-                println("Error generating bio: ${e.message}")
-                e.printStackTrace()
-                call.respond(HttpStatusCode.InternalServerError, mapOf("error" to e.message))
+                call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "Failed to generate bio")))
             }
         }
     }
-    route("/owners"){
-        //Register a property owner user
-        post("/register"){
+
+    route("/owners") {
+        // Register a property owner user
+        post("/register") {
             try {
                 val user = call.receive<PropertyOwnerUser>()
-
                 val result = UserService.registerPropertyOwner(user)
-
                 if (result["error"] != null) {
                     call.respond(HttpStatusCode.BadRequest, mapOf("error" to result["error"]))
                 } else {
@@ -91,13 +78,8 @@ fun Routing.configureUserRoutes() {
                     call.respond(HttpStatusCode.Created, response)
                 }
             } catch (e: Exception) {
-                call.respond(
-                    HttpStatusCode.InternalServerError,
-                    mapOf("error" to (e.message ?: "Internal server error"))
-                )
+                call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "Internal server error")))
             }
-
         }
     }
-
 }
