@@ -9,8 +9,6 @@ import org.litote.kmongo.Id
 @Serializable
 data class RoommateUser(
     @BsonId @Contextual val id: String = ObjectId().toHexString(), // MongoDB-generated ID
-    val attributeWeights: Map<Attribute, Double> = emptyMap(), // user's choice of weights
-    val condoPreferenceWeights: Map<CondoPreference, Double> = emptyMap(), // same
     val email: String,
     val fullName: String,
     val phoneNumber: String,
@@ -23,6 +21,7 @@ data class RoommateUser(
     val attributes: List<Attribute>,
     val hobbies: List<Hobby>,
     val lookingForRoomies: List<LookingForRoomiesPreference>,
+    val lookingForCondo: List<LookingForCondoPreference> = emptyList(), // if missing from DB, uses default instead of crashing
     val roommatesNumber: Int,
     val minPropertySize: Int,
     val maxPropertySize: Int,
@@ -83,7 +82,15 @@ enum class CondoPreference {
 }
 
 @Serializable
+data class LookingForCondoPreference(
+    val attribute: CondoPreference,
+    val weight: Double,
+    val setWeight: Boolean = false,
+)
+
+@Serializable
 data class LookingForRoomiesPreference(
     val attribute: Attribute,
-    val isDealbreaker: Boolean = false
+    val weight: Double,
+    val setWeight: Boolean,
 )
