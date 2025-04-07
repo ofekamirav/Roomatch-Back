@@ -161,6 +161,32 @@ paths:
         '500':
           description: Internal server error
 
+
+  /roommates/generate-bio:
+    post:
+      tags:
+        - Roommate
+      summary: Generate a personal bio for a roommate
+      description: Uses Gemini AI to generate a short personal bio based on user data.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BioRequest'
+      responses:
+        '200':
+          description: Generated personal bio
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BioResponse'
+        '400':
+          description: Bad request
+        '500':
+          description: Internal server error
+
+
   /likes:
     post:
       tags:
@@ -400,6 +426,47 @@ components:
           type: string
           nullable: true
           example: "https://example.com/profile.jpg"
+
+    BioRequest:
+      type: object
+      required:
+        - id
+        - fullName
+        - hobbies
+        - attributes
+        - work
+      properties:
+        id:
+          type: string
+          example: "6613f1fc4d41b1c1d78f1234"
+        fullName:
+          type: string
+          example: "Zuri Cohen"
+        hobbies:
+          type: array
+          items:
+            type: string
+            enum: [ MUSICIAN, SPORT, COOKER, PARTY, TV, GAMER, ARTIST, DANCER, WRITER ]
+          example: [ "SPORT", "TV" ]
+        attributes:
+          type: array
+          items:
+            type: string
+            enum: [ SMOKER, STUDENT, PET_LOVER, PET_OWNER, VEGETARIAN, CLEAN, NIGHT_WORKER, IN_RELATIONSHIP, KOSHER, JEWISH, MUSLIM, CHRISTIAN, REMOTE_WORKER, ATHEIST, QUIET ]
+          example: [ "CLEAN", "QUIET", "VEGETARIAN" ]
+        work:
+          type: string
+          example: "Software Developer"
+
+    BioResponse:
+      type: object
+      required:
+        - generatedBio
+      properties:
+        generatedBio:
+          type: string
+          example: "Hi, I'm Zuri, a software developer who loves a good game and hitting the gym! I'm a clean and quiet vegetarian looking for a chill roommate who respects shared spaces."
+
 
     PropertyOwnerUser:
       type: object
