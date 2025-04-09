@@ -21,13 +21,12 @@ data class RoommateUser(
     val attributes: List<Attribute>,
     val hobbies: List<Hobby>,
     val lookingForRoomies: List<LookingForRoomiesPreference>,
-    val lookingForCondo: List<LookingForCondoPreference> = emptyList(), // if missing from DB, uses default instead of crashing
+    val lookingForCondo: List<LookingForCondoPreference>,
     val roommatesNumber: Int,
     val minPropertySize: Int,
     val maxPropertySize: Int,
     val minPrice: Int,
     val maxPrice: Int,
-    val condoPreference: List<CondoPreference>,
     val personalBio: String? = null,
 )
 
@@ -83,7 +82,7 @@ enum class CondoPreference {
 
 @Serializable
 data class LookingForCondoPreference(
-    val attribute: CondoPreference,
+    val preference: CondoPreference,
     val weight: Double,
     val setWeight: Boolean = false,
 )
