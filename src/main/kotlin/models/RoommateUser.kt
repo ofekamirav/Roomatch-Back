@@ -21,12 +21,12 @@ data class RoommateUser(
     val attributes: List<Attribute>,
     val hobbies: List<Hobby>,
     val lookingForRoomies: List<LookingForRoomiesPreference>,
+    val lookingForCondo: List<LookingForCondoPreference>,
     val roommatesNumber: Int,
     val minPropertySize: Int,
     val maxPropertySize: Int,
     val minPrice: Int,
     val maxPrice: Int,
-    val condoPreference: List<CondoPreference>,
     val personalBio: String? = null,
 )
 
@@ -81,7 +81,15 @@ enum class CondoPreference {
 }
 
 @Serializable
+data class LookingForCondoPreference(
+    val preference: CondoPreference,
+    val weight: Double,
+    val setWeight: Boolean = false,
+)
+
+@Serializable
 data class LookingForRoomiesPreference(
     val attribute: Attribute,
-    val isDealbreaker: Boolean = false
+    val weight: Double,
+    val setWeight: Boolean,
 )
