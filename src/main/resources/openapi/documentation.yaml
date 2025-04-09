@@ -161,6 +161,32 @@ paths:
         '500':
           description: Internal server error
 
+
+  /roommates/generate-bio:
+    post:
+      tags:
+        - Roommate
+      summary: Generate a personal bio for a roommate
+      description: Uses Gemini AI to generate a short personal bio based on user data.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BioRequest'
+      responses:
+        '200':
+          description: Generated personal bio
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BioResponse'
+        '400':
+          description: Bad request
+        '500':
+          description: Internal server error
+
+
   /likes:
     post:
       tags:
@@ -266,6 +292,7 @@ components:
       required:
         - id
         - token
+        - userType
       properties:
         id:
           type: string
@@ -273,6 +300,9 @@ components:
         token:
           type: string
           example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+        userType:
+          type: string
+          example: "Roommate"
 
     PropertyUploadResponse:
       type: object
@@ -291,18 +321,41 @@ components:
 
     LookingForRoomiesPreference:
       type: object
-      description: "Represents a roommate preference with an optional dealbreaker flag."
+      description: "Represents a roommate preference with an optional weight + set weight flag."
       required:
         - attribute
-        - isDealbreaker
+        - weight
+        - setWeight
       properties:
         attribute:
           type: string
           enum: [ SMOKER, STUDENT, PET_LOVER, PET_OWNER, VEGETARIAN, CLEAN, NIGHT_WORKER, IN_RELATIONSHIP, KOSHER, JEWISH, MUSLIM, CHRISTIAN, REMOTE_WORKER, ATHEIST, QUIET ]
           example: "QUIET"
-        isDealbreaker:
+        weight:
+          type: number
+          example: 0.0
+        setWeight:
           type: boolean
-          example: true
+          example: false
+
+    LookingForCondoPreference:
+      type: object
+      description: "Represents a roommate condo preference with an optional weight + set weight flag."
+      required:
+        - preference
+        - weight
+        - setWeight
+      properties:
+        preference:
+          type: string
+          enum: [ BALCONY, ELEVATOR, PET_ALLOWED, SHELTER, FURNISHED, PARKING ]
+          example: "BALCONY"
+        weight:
+          type: number
+          example: 0.0
+        setWeight:
+          type: boolean
+          example: false
 
     RoommateUser:
       type: object
@@ -316,15 +369,16 @@ components:
         - attributes
         - hobbies
         - lookingForRoomies
+        - lookingForCondo
         - roommatesNumber
         - minPropertySize
         - maxPropertySize
         - minPrice
         - maxPrice
-        - condoPreference
         - email
         - password
         - profilePicture
+        - personalBio
       properties:
         fullName:
           type: string
@@ -360,11 +414,25 @@ components:
             $ref: "#/components/schemas/LookingForRoomiesPreference"
           example:
             - attribute: "QUIET"
-              isDealbreaker: true
+              weight: 0.75
+              setWeight: true
             - attribute: "NIGHT_WORKER"
-              isDealbreaker: false
+              weight: 0.5
+              setWeight: true
             - attribute: "JEWISH"
-              isDealbreaker: false
+              weight: 0.25
+              setWeight: true
+        lookingForCondo:
+          type: array
+          items:
+            $ref: "#/components/schemas/LookingForCondoPreference"
+          example:
+            - preference: "ELEVATOR"
+              weight: 0.5
+              setWeight: true
+            - preference: "PARKING"
+              weight: 0.5
+              setWeight: true
         roommatesNumber:
           type: integer
           example: 2
@@ -380,12 +448,6 @@ components:
         maxPrice:
           type: integer
           example: 8000
-        condoPreference:
-          type: array
-          items:
-            type: string
-            enum: [BALCONY, ELEVATOR, PET_ALLOWED, SHELTER, FURNISHED, PARKING]
-          example: ["BALCONY", "ELEVATOR"]
         email:
           type: string
           example: "ofek@gmail.com"
@@ -396,6 +458,50 @@ components:
           type: string
           nullable: true
           example: "https://example.com/profile.jpg"
+        personalBio:
+          type: string
+          example: "Hi, I'm Ofek, a software developer who loves gaming and sports! I'm looking for a chill roommate who respects shared spaces."
+
+    BioRequest:
+      type: object
+      required:
+        - id
+        - fullName
+        - hobbies
+        - attributes
+        - work
+      properties:
+        id:
+          type: string
+          example: "6613f1fc4d41b1c1d78f1234"
+        fullName:
+          type: string
+          example: "Zuri Cohen"
+        hobbies:
+          type: array
+          items:
+            type: string
+            enum: [ MUSICIAN, SPORT, COOKER, PARTY, TV, GAMER, ARTIST, DANCER, WRITER ]
+          example: [ "SPORT", "TV" ]
+        attributes:
+          type: array
+          items:
+            type: string
+            enum: [ SMOKER, STUDENT, PET_LOVER, PET_OWNER, VEGETARIAN, CLEAN, NIGHT_WORKER, IN_RELATIONSHIP, KOSHER, JEWISH, MUSLIM, CHRISTIAN, REMOTE_WORKER, ATHEIST, QUIET ]
+          example: [ "CLEAN", "QUIET", "VEGETARIAN" ]
+        work:
+          type: string
+          example: "Software Developer"
+
+    BioResponse:
+      type: object
+      required:
+        - generatedBio
+      properties:
+        generatedBio:
+          type: string
+          example: "Hi, I'm Zuri, a software developer who loves a good game and hitting the gym! I'm a clean and quiet vegetarian looking for a chill roommate who respects shared spaces."
+
 
     PropertyOwnerUser:
       type: object
@@ -403,6 +509,7 @@ components:
       required:
         - fullName
         - phoneNumber
+        - birthDate
         - email
         - password
         - profilePicture
@@ -413,6 +520,9 @@ components:
         phoneNumber:
           type: string
           example: "054-9876543"
+        birthDate:
+          type: string
+          example: "1998-06-15"
         email:
           type: string
           example: "david@gmail.com"
