@@ -1,0 +1,889 @@
+openapi: 3.0.1
+info:
+  description: API documentation for RooMatch backend
+  title: RooMatch API
+  version: 1.0.0
+servers:
+- description: Local server
+  url: http://localhost:8080
+paths:
+  /roommates/register:
+    post:
+      description: Creates a new roommate user account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoommateUser'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+          description: Roommate registration successful
+        "400":
+          description: Error creating user
+        "500":
+          description: Internal server error
+      summary: Register a roommate user
+      tags:
+      - Roommate
+      x-content-type: application/json
+      x-accepts: application/json
+  /owners/register:
+    post:
+      description: Creates a new property owner user account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PropertyOwnerUser'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+          description: Property owner registration successful
+        "400":
+          description: Error creating user
+        "500":
+          description: Internal server error
+      summary: Register a property owner user
+      tags:
+      - Property Owner
+      x-content-type: application/json
+      x-accepts: application/json
+  /properties/{ownerId}:
+    get:
+      description: Returns all properties associated with a property owner
+      parameters:
+      - description: The ID of the property owner
+        explode: false
+        in: path
+        name: ownerId
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Property'
+                type: array
+          description: Properties found
+        "404":
+          description: No properties found
+        "500":
+          description: Internal server error
+      summary: Get all properties of a specific owner
+      tags:
+      - Properties
+      x-accepts: application/json
+    post:
+      description: Adds a new property associated with an owner
+      parameters:
+      - description: The ID of the property owner
+        explode: false
+        in: path
+        name: ownerId
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Property'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PropertyUploadResponse'
+          description: Property successfully added
+        "400":
+          description: Error creating property
+        "500":
+          description: Internal server error
+      summary: Upload a new property
+      tags:
+      - Properties
+      x-content-type: application/json
+      x-accepts: application/json
+  /match/{seekerId}:
+    get:
+      description: Returns a single match for the seeker.
+      parameters:
+      - description: The ID of the roommate seeker
+        explode: false
+        in: path
+        name: seekerId
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Match'
+          description: A single match returned
+        "204":
+          description: No more matches
+        "400":
+          description: Bad request (missing seekerId)
+      summary: Get next match for seeker
+      tags:
+      - Matching
+      x-accepts: application/json
+  /roommates/{seekerId}:
+    get:
+      description: Returns a roommate user by ID
+      parameters:
+      - description: The ID of the roommate user
+        explode: false
+        in: path
+        name: seekerId
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoommateUser'
+          description: Roommate found
+        "404":
+          description: Roommate not found
+        "500":
+          description: Internal server error
+      summary: Get roommate by ID
+      tags:
+      - Roommate
+      x-accepts: application/json
+  /roommates/generate-bio:
+    post:
+      description: Uses Gemini AI to generate a short personal bio based on user data.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BioRequest'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BioResponse'
+          description: Generated personal bio
+        "400":
+          description: Bad request
+        "500":
+          description: Internal server error
+      summary: Generate a personal bio for a roommate
+      tags:
+      - Roommate
+      x-content-type: application/json
+      x-accepts: application/json
+  /likes:
+    post:
+      description: Saves a match that the seeker has liked.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Match'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Match'
+          description: Match successfully liked
+        "400":
+          description: Error creating liked match
+        "500":
+          description: Internal server error
+      summary: Save a liked match
+      tags:
+      - Likes
+      x-content-type: application/json
+      x-accepts: application/json
+  /likes/{seekerId}:
+    get:
+      description: Retrieves all matches that a specific seeker has liked.
+      parameters:
+      - description: The ID of the seeker (roommate user)
+        explode: false
+        in: path
+        name: seekerId
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Match'
+                type: array
+          description: Liked matches found
+        "404":
+          description: No liked matches found
+        "500":
+          description: Internal server error
+      summary: Get all liked matches by seeker
+      tags:
+      - Likes
+      x-accepts: application/json
+  /dislikes:
+    post:
+      description: Saves a match that the seeker has disliked.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Dislike'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dislike'
+          description: Match successfully marked as disliked
+        "400":
+          description: Error creating disliked match
+        "500":
+          description: Internal server error
+      summary: Save a disliked match
+      tags:
+      - Dislikes
+      x-content-type: application/json
+      x-accepts: application/json
+  /dislikes/{seekerId}:
+    get:
+      description: Retrieves all matches that a specific seeker has disliked.
+      parameters:
+      - description: The ID of the seeker (roommate user)
+        explode: false
+        in: path
+        name: seekerId
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Dislike'
+                type: array
+          description: Disliked matches found
+        "404":
+          description: No disliked matches found
+        "500":
+          description: Internal server error
+      summary: Get all disliked matches by seeker
+      tags:
+      - Dislikes
+      x-accepts: application/json
+components:
+  schemas:
+    Match:
+      description: Match object that includes matched roommates and property score
+      example:
+        roommateMatches:
+        - matchScore: 78
+          roommateName: Ofek Amirav
+          roommateId: 65fa3d...
+        - matchScore: 78
+          roommateName: Ofek Amirav
+          roommateId: 65fa3d...
+        propertyMatchScore: 72
+        seekerId: 65fa3d..
+        id: 65f9bd...
+        propertyId: 65f9bd..
+      properties:
+        id:
+          example: 65f9bd...
+          type: string
+        seekerId:
+          example: 65fa3d..
+          type: string
+        propertyId:
+          example: 65f9bd..
+          type: string
+        roommateMatches:
+          items:
+            $ref: '#/components/schemas/RoommateMatch'
+          type: array
+        propertyMatchScore:
+          example: 72
+          type: integer
+      required:
+      - id
+      - propertyId
+      - propertyMatchScore
+      - roommateMatches
+      - seekerId
+      type: object
+    RoommateMatch:
+      example:
+        matchScore: 78
+        roommateName: Ofek Amirav
+        roommateId: 65fa3d...
+      properties:
+        roommateId:
+          example: 65fa3d...
+          type: string
+        roommateName:
+          example: Ofek Amirav
+          type: string
+        matchScore:
+          example: 78
+          type: integer
+      required:
+      - matchScore
+      - roommateId
+      - roommateName
+      type: object
+    RegisterResponse:
+      description: Model representing a response to a user registration request
+      example:
+        id: "123456789"
+        userType: Roommate
+        token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+      properties:
+        id:
+          example: "123456789"
+          type: string
+        token:
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+          type: string
+        userType:
+          example: Roommate
+          type: string
+      required:
+      - id
+      - token
+      - userType
+      type: object
+    PropertyUploadResponse:
+      description: Response after successfully adding a property
+      example:
+        message: Property successfully added.
+        propertyId: 65a123bfcdb1ef0010abcd12
+      properties:
+        propertyId:
+          example: 65a123bfcdb1ef0010abcd12
+          type: string
+        message:
+          example: Property successfully added.
+          type: string
+      required:
+      - message
+      - propertyId
+      type: object
+    LookingForRoomiesPreference:
+      description: Represents a roommate preference with an optional weight + set
+        weight flag.
+      properties:
+        attribute:
+          enum:
+          - SMOKER
+          - STUDENT
+          - PET_LOVER
+          - PET_OWNER
+          - VEGETARIAN
+          - CLEAN
+          - NIGHT_WORKER
+          - IN_RELATIONSHIP
+          - KOSHER
+          - JEWISH
+          - MUSLIM
+          - CHRISTIAN
+          - REMOTE_WORKER
+          - ATHEIST
+          - QUIET
+          example: QUIET
+          type: string
+        weight:
+          example: 0.0
+          type: number
+        setWeight:
+          example: false
+          type: boolean
+      required:
+      - attribute
+      - setWeight
+      - weight
+      type: object
+    LookingForCondoPreference:
+      description: Represents a roommate condo preference with an optional weight
+        + set weight flag.
+      properties:
+        preference:
+          enum:
+          - BALCONY
+          - ELEVATOR
+          - PET_ALLOWED
+          - SHELTER
+          - FURNISHED
+          - PARKING
+          example: BALCONY
+          type: string
+        weight:
+          example: 0.0
+          type: number
+        setWeight:
+          example: false
+          type: boolean
+      required:
+      - preference
+      - setWeight
+      - weight
+      type: object
+    RoommateUser:
+      description: Model representing a roommate user who is looking for an apartment
+        and roommates
+      example:
+        lookingForRoomies:
+        - attribute: QUIET
+          weight: 0.75
+          setWeight: true
+        - attribute: NIGHT_WORKER
+          weight: 0.5
+          setWeight: true
+        - attribute: JEWISH
+          weight: 0.25
+          setWeight: true
+        gender: MALE
+        lookingForCondo:
+        - preference: ELEVATOR
+          weight: 0.5
+          setWeight: true
+        - preference: PARKING
+          weight: 0.5
+          setWeight: true
+        work: Software Developer
+        fullName: Ofek Amirav
+        birthDate: 1998-06-15
+        profilePicture: https://example.com/profile.jpg
+        password: "123456"
+        personalBio: "Hi, I'm Ofek, a software developer who loves gaming and sports!\
+          \ I'm looking for a chill roommate who respects shared spaces."
+        phoneNumber: 052-1234567
+        hobbies:
+        - SPORT
+        - GAMER
+        roommatesNumber: 2
+        minPrice: 4500
+        attributes:
+        - CLEAN
+        - QUIET
+        - VEGETARIAN
+        maxPrice: 8000
+        minPropertySize: 65
+        maxPropertySize: 80
+        email: ofek@gmail.com
+      properties:
+        fullName:
+          example: Ofek Amirav
+          type: string
+        phoneNumber:
+          example: 052-1234567
+          type: string
+        gender:
+          enum:
+          - MALE
+          - FEMALE
+          - OTHER
+          example: MALE
+          type: string
+        birthDate:
+          example: 1998-06-15
+          type: string
+        work:
+          example: Software Developer
+          type: string
+        attributes:
+          example:
+          - CLEAN
+          - QUIET
+          - VEGETARIAN
+          items:
+            enum:
+            - SMOKER
+            - STUDENT
+            - PET_LOVER
+            - PET_OWNER
+            - VEGETARIAN
+            - CLEAN
+            - NIGHT_WORKER
+            - IN_RELATIONSHIP
+            - KOSHER
+            - JEWISH
+            - MUSLIM
+            - CHRISTIAN
+            - REMOTE_WORKER
+            - ATHEIST
+            - QUIET
+            type: string
+          type: array
+        hobbies:
+          example:
+          - SPORT
+          - GAMER
+          items:
+            enum:
+            - MUSICIAN
+            - SPORT
+            - COOKER
+            - PARTY
+            - TV
+            - GAMER
+            - ARTIST
+            - DANCER
+            - WRITER
+            type: string
+          type: array
+        lookingForRoomies:
+          example:
+          - attribute: QUIET
+            weight: 0.75
+            setWeight: true
+          - attribute: NIGHT_WORKER
+            weight: 0.5
+            setWeight: true
+          - attribute: JEWISH
+            weight: 0.25
+            setWeight: true
+          items:
+            $ref: '#/components/schemas/LookingForRoomiesPreference'
+          type: array
+        lookingForCondo:
+          example:
+          - preference: ELEVATOR
+            weight: 0.5
+            setWeight: true
+          - preference: PARKING
+            weight: 0.5
+            setWeight: true
+          items:
+            $ref: '#/components/schemas/LookingForCondoPreference'
+          type: array
+        roommatesNumber:
+          example: 2
+          type: integer
+        minPropertySize:
+          example: 65
+          type: integer
+        maxPropertySize:
+          example: 80
+          type: integer
+        minPrice:
+          example: 4500
+          type: integer
+        maxPrice:
+          example: 8000
+          type: integer
+        email:
+          example: ofek@gmail.com
+          type: string
+        password:
+          example: "123456"
+          type: string
+        profilePicture:
+          example: https://example.com/profile.jpg
+          nullable: true
+          type: string
+        personalBio:
+          example: "Hi, I'm Ofek, a software developer who loves gaming and sports!\
+            \ I'm looking for a chill roommate who respects shared spaces."
+          type: string
+      required:
+      - attributes
+      - birthDate
+      - email
+      - fullName
+      - gender
+      - hobbies
+      - lookingForCondo
+      - lookingForRoomies
+      - maxPrice
+      - maxPropertySize
+      - minPrice
+      - minPropertySize
+      - password
+      - personalBio
+      - phoneNumber
+      - profilePicture
+      - roommatesNumber
+      - work
+      type: object
+    BioRequest:
+      example:
+        hobbies:
+        - SPORT
+        - TV
+        work: Software Developer
+        fullName: Zuri Cohen
+        attributes:
+        - CLEAN
+        - QUIET
+        - VEGETARIAN
+        id: 6613f1fc4d41b1c1d78f1234
+      properties:
+        id:
+          example: 6613f1fc4d41b1c1d78f1234
+          type: string
+        fullName:
+          example: Zuri Cohen
+          type: string
+        hobbies:
+          example:
+          - SPORT
+          - TV
+          items:
+            enum:
+            - MUSICIAN
+            - SPORT
+            - COOKER
+            - PARTY
+            - TV
+            - GAMER
+            - ARTIST
+            - DANCER
+            - WRITER
+            type: string
+          type: array
+        attributes:
+          example:
+          - CLEAN
+          - QUIET
+          - VEGETARIAN
+          items:
+            enum:
+            - SMOKER
+            - STUDENT
+            - PET_LOVER
+            - PET_OWNER
+            - VEGETARIAN
+            - CLEAN
+            - NIGHT_WORKER
+            - IN_RELATIONSHIP
+            - KOSHER
+            - JEWISH
+            - MUSLIM
+            - CHRISTIAN
+            - REMOTE_WORKER
+            - ATHEIST
+            - QUIET
+            type: string
+          type: array
+        work:
+          example: Software Developer
+          type: string
+      required:
+      - attributes
+      - fullName
+      - hobbies
+      - id
+      - work
+      type: object
+    BioResponse:
+      example:
+        generatedBio: "Hi, I'm Zuri, a software developer who loves a good game and\
+          \ hitting the gym! I'm a clean and quiet vegetarian looking for a chill\
+          \ roommate who respects shared spaces."
+      properties:
+        generatedBio:
+          example: "Hi, I'm Zuri, a software developer who loves a good game and hitting\
+            \ the gym! I'm a clean and quiet vegetarian looking for a chill roommate\
+            \ who respects shared spaces."
+          type: string
+      required:
+      - generatedBio
+      type: object
+    PropertyOwnerUser:
+      description: Model representing a property owner user who is looking for roommates
+      example:
+        profilePicture: https://example.com/owner.jpg
+        password: abcdef
+        phoneNumber: 054-9876543
+        fullName: David Cohen
+        birthDate: 1998-06-15
+        email: david@gmail.com
+      properties:
+        fullName:
+          example: David Cohen
+          type: string
+        phoneNumber:
+          example: 054-9876543
+          type: string
+        birthDate:
+          example: 1998-06-15
+          type: string
+        email:
+          example: david@gmail.com
+          type: string
+        password:
+          example: abcdef
+          type: string
+        profilePicture:
+          example: https://example.com/owner.jpg
+          nullable: true
+          type: string
+      required:
+      - birthDate
+      - email
+      - fullName
+      - password
+      - phoneNumber
+      - profilePicture
+      type: object
+    Property:
+      description: Model representing a property
+      example:
+        canContainRoommates: 3
+        features:
+        - BALCONY
+        - ELEVATOR
+        address: "123 Main St, Tel Aviv"
+        pricePerMonth: 7000
+        size: 120
+        roomsNumber: 4
+        available: true
+        type: APARTMENT
+        title: Luxury Apartment
+        bathrooms: 2
+        floor: 5
+        photos:
+        - https://example.com/image1.jpg
+        - https://example.com/image2.jpg
+      properties:
+        available:
+          example: true
+          type: boolean
+        type:
+          enum:
+          - ROOM
+          - APARTMENT
+          example: APARTMENT
+          type: string
+        address:
+          example: "123 Main St, Tel Aviv"
+          type: string
+        title:
+          example: Luxury Apartment
+          type: string
+        canContainRoommates:
+          example: 3
+          type: integer
+        roomsNumber:
+          example: 4
+          type: integer
+        bathrooms:
+          example: 2
+          type: integer
+        floor:
+          example: 5
+          type: integer
+        size:
+          example: 120
+          type: integer
+        pricePerMonth:
+          example: 7000
+          type: integer
+        features:
+          example:
+          - BALCONY
+          - ELEVATOR
+          items:
+            enum:
+            - BALCONY
+            - ELEVATOR
+            - PET_ALLOWED
+            - SHELTER
+            - FURNISHED
+            - PARKING
+            type: string
+          type: array
+        photos:
+          example:
+          - https://example.com/image1.jpg
+          - https://example.com/image2.jpg
+          items:
+            type: string
+          type: array
+      required:
+      - address
+      - available
+      - bathrooms
+      - canContainRoommates
+      - features
+      - floor
+      - photos
+      - pricePerMonth
+      - roomsNumber
+      - size
+      - title
+      - type
+      type: object
+    Dislike:
+      description: Represents a match that a seeker disliked.
+      example:
+        match:
+          roommateMatches:
+          - matchScore: 78
+            roommateName: Ofek Amirav
+            roommateId: 65fa3d...
+          - matchScore: 78
+            roommateName: Ofek Amirav
+            roommateId: 65fa3d...
+          propertyMatchScore: 72
+          seekerId: 65fa3d..
+          id: 65f9bd...
+          propertyId: 65f9bd..
+        seekerId: 65fa3dc4f4d41b1c1d78f123
+        id: 662fb8dcf4d41b1c1d78f890
+        dislikedAt: 2025-03-29T13:45:00Z
+      properties:
+        id:
+          example: 662fb8dcf4d41b1c1d78f890
+          type: string
+        seekerId:
+          example: 65fa3dc4f4d41b1c1d78f123
+          type: string
+        match:
+          $ref: '#/components/schemas/Match'
+        dislikedAt:
+          example: 2025-03-29T13:45:00Z
+          format: date-time
+          type: string
+      required:
+      - dislikedAt
+      - id
+      - match
+      - seekerId
+      type: object
+

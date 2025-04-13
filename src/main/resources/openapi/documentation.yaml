@@ -198,14 +198,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Like'
+              $ref: '#/components/schemas/Match'
       responses:
         '201':
           description: Match successfully liked
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Like'
+                $ref: '#/components/schemas/Match'
         '400':
           description: Error creating liked match
         '500':
@@ -232,7 +232,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Like'
+                  $ref: '#/components/schemas/Match'
         '404':
           description: No liked matches found
         '500':
@@ -645,27 +645,25 @@ components:
             type: string
           example: ["https://example.com/image1.jpg", "https://example.com/image2.jpg"]
 
-    Like:
-      type: object
-      description: Represents a match that a seeker liked.
-      required:
-        - id
-        - seekerId
-        - match
-        - likedAt
-      properties:
-        id:
-          type: string
-          example: "662fb8dcf4d41b1c1d78f567"
-        seekerId:
-          type: string
-          example: "65fa3dc4f4d41b1c1d78f123"
-        match:
-          $ref: '#/components/schemas/Match'
-        likedAt:
-          type: string
-          format: date-time
-          example: "2025-03-29T12:30:00Z"
+#    Like:
+#      type: object
+#      description: Represents a match that a seeker liked.
+#      required:
+#
+#        - match
+#      properties:
+#        id:
+#          type: string
+#          example: "662fb8dcf4d41b1c1d78f567"
+#        seekerId:
+#          type: string
+#          example: "65fa3dc4f4d41b1c1d78f123"
+#        match:
+#          $ref: '#/components/schemas/Match'
+#        likedAt:
+#          type: string
+#          format: date-time
+#          example: "2025-03-29T12:30:00Z"
 
     Dislike:
       type: object
