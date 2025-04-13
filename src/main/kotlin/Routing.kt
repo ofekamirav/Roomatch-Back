@@ -13,5 +13,6 @@ fun Application.configureRouting() {
         configureAuthRoutes()
         configureMatchRoutes()
         configureLikeRoutes()
+        configureDislikeRoutes()
     }
 }

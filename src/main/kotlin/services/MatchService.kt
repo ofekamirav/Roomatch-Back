@@ -16,34 +16,46 @@ object MatchService {
     val userSwipes: MutableMap<String, MutableSet<String>> = mutableMapOf()
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
-    //Calculate a Match between a seeker and a property and roommates
-    suspend fun performMatch(seekerId: String): List<Match>? {
-        val seeker = DatabaseManager.getRoommateById(seekerId)
-        if (seeker == null) {
-            logger.warn("Seeker not found for seekerId: $seekerId")
-            return null
-        }
 
+    suspend fun performMatch(seekerId: String): List<Match>? {
+        // Retrieve seeker information; exit if seeker doesn't exist
+        val seeker = DatabaseManager.getRoommateById(seekerId) ?: return null
+
+        // Fetch all available properties asynchronously
         val allPropertiesDeferred = coroutineScope.async { DatabaseManager.getAllAvailableProperties() }
+
+        // Fetch all potential roommates asynchronously
         val allRoommatesDeferred = coroutineScope.async { DatabaseManager.getAllRoommates() }
 
-        //wait for the properties and roommates to be fetched
+        // Fetch previously disliked matches by this seeker asynchronously
+        val dislikedMatchesDeferred = coroutineScope.async { DatabaseManager.getDislikedMatchesBySeekerId(seekerId) }
+
+        // Await the fetched data
         val allProperties = allPropertiesDeferred.await()
         val allRoommates = allRoommatesDeferred.await()
+        val dislikedMatches = dislikedMatchesDeferred.await()
 
-        // Filter available properties based on available slots and seeker preferences
+        // Create a set of property IDs from the disliked matches for efficient lookup
+        val dislikedPropertyIds = dislikedMatches.map { it.propertyId }.toSet()
+
+        // Filter potential properties based on user's dislikes and preferences
         val potentialProperties = allProperties.filter { property ->
-            when (property.type) {
-                PropertyType.ROOM ->
-                    property.CurrentRoommatesIds.size < property.canContainRoommates!! &&
-                            (property.pricePerMonth == null || property.pricePerMonth in seeker.minPrice..seeker.maxPrice) &&
-                            (property.size == null || property.size in seeker.minPropertySize..seeker.maxPropertySize)
-                PropertyType.APARTMENT ->
-                    property.CurrentRoommatesIds.isEmpty() &&
-                            (property.pricePerMonth == null || property.pricePerMonth in seeker.minPrice..seeker.maxPrice) &&
-                            (property.size == null || property.size in seeker.minPropertySize..seeker.maxPropertySize)
-            }
+            property.id !in dislikedPropertyIds && // Exclude properties previously disliked by the user
+                    when (property.type) {
+                        PropertyType.ROOM ->
+                            property.CurrentRoommatesIds.size < property.canContainRoommates!! &&
+                                    (property.pricePerMonth == null || property.pricePerMonth in seeker.minPrice..seeker.maxPrice) &&
+                                    (property.size == null || property.size in seeker.minPropertySize..seeker.maxPropertySize)
+                        PropertyType.APARTMENT ->
+                            property.CurrentRoommatesIds.isEmpty() &&
+                                    (property.pricePerMonth == null || property.pricePerMonth in seeker.minPrice..seeker.maxPrice) &&
+                                    (property.size == null || property.size in seeker.minPropertySize..seeker.maxPropertySize)
+                    }
         }
+
+
+
+
         logger.info("Potential properties count: ${potentialProperties.size}")
 
         val matches: MutableList<Match> = mutableListOf()

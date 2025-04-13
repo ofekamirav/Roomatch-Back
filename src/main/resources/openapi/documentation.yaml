@@ -198,14 +198,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Match'
+              $ref: '#/components/schemas/Like'
       responses:
         '201':
-          description: Match successfully saved
+          description: Match successfully liked
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Match'
+                $ref: '#/components/schemas/Like'
         '400':
           description: Error creating liked match
         '500':
@@ -226,15 +226,66 @@ paths:
             type: string
       responses:
         '200':
-          description: Matches found
+          description: Liked matches found
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Match'
+                  $ref: '#/components/schemas/Like'
         '404':
-          description: No matches found
+          description: No liked matches found
+        '500':
+          description: Internal server error
+
+  /dislikes:
+    post:
+      tags:
+        - Dislikes
+      summary: Save a disliked match
+      description: Saves a match that the seeker has disliked.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Dislike'
+      responses:
+        '201':
+          description: Match successfully marked as disliked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dislike'
+        '400':
+          description: Error creating disliked match
+        '500':
+          description: Internal server error
+
+  /dislikes/{seekerId}:
+    get:
+      tags:
+        - Dislikes
+      summary: Get all disliked matches by seeker
+      description: Retrieves all matches that a specific seeker has disliked.
+      parameters:
+        - name: seekerId
+          in: path
+          required: true
+          description: The ID of the seeker (roommate user)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Disliked matches found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Dislike'
+        '404':
+          description: No disliked matches found
         '500':
           description: Internal server error
 
@@ -593,6 +644,50 @@ components:
           items:
             type: string
           example: ["https://example.com/image1.jpg", "https://example.com/image2.jpg"]
+
+    Like:
+      type: object
+      description: Represents a match that a seeker liked.
+      required:
+        - id
+        - seekerId
+        - match
+        - likedAt
+      properties:
+        id:
+          type: string
+          example: "662fb8dcf4d41b1c1d78f567"
+        seekerId:
+          type: string
+          example: "65fa3dc4f4d41b1c1d78f123"
+        match:
+          $ref: '#/components/schemas/Match'
+        likedAt:
+          type: string
+          format: date-time
+          example: "2025-03-29T12:30:00Z"
+
+    Dislike:
+      type: object
+      description: Represents a match that a seeker disliked.
+      required:
+        - id
+        - seekerId
+        - match
+        - dislikedAt
+      properties:
+        id:
+          type: string
+          example: "662fb8dcf4d41b1c1d78f890"
+        seekerId:
+          type: string
+          example: "65fa3dc4f4d41b1c1d78f123"
+        match:
+          $ref: '#/components/schemas/Match'
+        dislikedAt:
+          type: string
+          format: date-time
+          example: "2025-03-29T13:45:00Z"
 
 
 

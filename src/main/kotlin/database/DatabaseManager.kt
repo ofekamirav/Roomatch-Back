@@ -241,4 +241,36 @@ object DatabaseManager {
 
 
 
+    //-------------------------Dislikes---------------------------------------------------------------
+
+    private var dislikesCollection: CoroutineCollection<Match>? = null // clearly NEW
+
+    init {
+        dislikesCollection = database?.getCollection("dislikes") // clearly NEW
+    }
+
+    fun getDislikesCollection(): CoroutineCollection<Match>? {
+        return dislikesCollection
+    }
+
+    suspend fun insertDislikedMatch(match: Match): Match? {
+        return try {
+            dislikesCollection?.insertOne(match)
+            match
+        } catch (e: Exception) {
+            logger.error("Error inserting disliked match", e)
+            null
+        }
+    }
+
+    suspend fun getDislikedMatchesBySeekerId(seekerId: String): List<Match> {
+        return try {
+            dislikesCollection?.find(Match::seekerId eq seekerId)?.toList() ?: emptyList()
+        } catch (e: Exception) {
+            logger.error("Error fetching disliked matches", e)
+            emptyList()
+        }
+    }
+
+
 }
