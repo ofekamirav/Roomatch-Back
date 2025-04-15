@@ -13,7 +13,7 @@ import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class UserResponse(val token: String?, val userId: String?, val userType: String?)
+data class UserResponse(val token: String?, val refreshToken: String?, val userId: String?, val userType: String?)
 
 fun Routing.configureUserRoutes() {
 
@@ -29,7 +29,7 @@ fun Routing.configureUserRoutes() {
                 if (result["error"] != null) {
                     call.respond(HttpStatusCode.BadRequest, mapOf("error" to result["error"]))
                 } else {
-                    val response = UserResponse(result["token"].toString(), result["userId"].toString(), result["userType"].toString())
+                    val response = UserResponse(result["token"].toString(),result["refreshToken"].toString() ,result["userId"].toString(), result["userType"].toString())
                     call.respond(HttpStatusCode.Created, response)
                 }
             } catch (e: Exception) {
@@ -74,8 +74,28 @@ fun Routing.configureUserRoutes() {
                 if (result["error"] != null) {
                     call.respond(HttpStatusCode.BadRequest, mapOf("error" to result["error"]))
                 } else {
-                    val response = UserResponse(result["token"].toString(), result["userId"].toString(), result["userType"].toString())
+                    val response = UserResponse(result["token"].toString(),result["refreshToken"].toString() ,result["userId"].toString(), result["userType"].toString())
                     call.respond(HttpStatusCode.Created, response)
+                }
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "Internal server error")))
+            }
+        }
+    }
+
+    route("/login"){
+        post {
+            try {
+                val request = call.receive<Map<String, String>>()
+                val email = request["email"] ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Email is required"))
+                val password = request["password"] ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Password is required"))
+
+                val result = UserService.login(email, password)
+                if (result["error"] != null) {
+                    call.respond(HttpStatusCode.Unauthorized, mapOf("error" to result["error"]))
+                } else {
+                    val response = UserResponse(result["token"].toString(),result["refreshToken"].toString() ,result["userId"].toString(), result["userType"].toString())
+                    call.respond(HttpStatusCode.OK, response)
                 }
             } catch (e: Exception) {
                 call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "Internal server error")))

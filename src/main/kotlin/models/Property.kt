@@ -12,6 +12,8 @@ data class Property(
     val available: Boolean?=null,
     val type: PropertyType,
     val address: String?=null,
+    val latitude: Double?=null,
+    val longitude: Double?=null,
     val title: String?=null,
     val canContainRoommates: Int?=null,
     var CurrentRoommatesIds: List<String> = emptyList(),

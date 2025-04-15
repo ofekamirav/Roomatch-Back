@@ -3,6 +3,7 @@ package com.services
 import com.database.DatabaseManager
 import com.models.*
 import com.utils.MatchWeights
+import com.utils.haversine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -31,8 +32,18 @@ object MatchService {
         val allProperties = allPropertiesDeferred.await()
         val allRoommates = allRoommatesDeferred.await()
 
+        val locationProperties = allProperties.filter { property ->
+            val propLat = property.latitude
+            val propLon = property.longitude
+            if (propLat != null && propLon != null && seeker.latitude != null && seeker.longitude != null) {
+                haversine(seeker.latitude, seeker.longitude, propLat, propLon) <= seeker.preferredRadiusKm
+            } else false
+        }
+
+        logger.info("Preferred location properties count: ${locationProperties.size}")
+
         // Filter available properties based on available slots and seeker preferences
-        val potentialProperties = allProperties.filter { property ->
+        val potentialProperties = locationProperties.filter { property ->
             when (property.type) {
                 PropertyType.ROOM ->
                     property.CurrentRoommatesIds.size < property.canContainRoommates!! &&
