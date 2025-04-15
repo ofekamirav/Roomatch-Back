@@ -3,6 +3,11 @@ package com.utils
 import com.auth0.jwt.JWT
 import com.auth0.jwt.JWTVerifier
 import com.auth0.jwt.algorithms.Algorithm
+import com.database.DatabaseManager
+import com.models.PropertyOwnerUser
+import com.models.RoommateUser
+import org.litote.kmongo.eq
+import org.litote.kmongo.setValue
 import java.util.*
 
 object JWTUtils {
@@ -40,6 +45,19 @@ object JWTUtils {
         return JWT.require(Algorithm.HMAC256(REFRESH_SECRET))
             .withIssuer("roomatch")
             .build()
+    }
+
+    private suspend fun updateRefreshToken(user: Any, refreshToken: String) {
+        when (user) {
+            is RoommateUser -> DatabaseManager.getRoommatesCollection()?.updateOne(
+                RoommateUser::id eq user.id,
+                setValue(RoommateUser::refreshToken, refreshToken)
+            )
+            is PropertyOwnerUser -> DatabaseManager.getOwnersCollection()?.updateOne(
+                PropertyOwnerUser::id eq user.id,
+                setValue(PropertyOwnerUser::refreshToken, refreshToken)
+            )
+        }
     }
 
 

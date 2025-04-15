@@ -78,6 +78,15 @@ object DatabaseManager {
         }
     }
 
+    suspend fun getRoomateByEmail(email: String): RoommateUser? {
+        return try {
+            roommatesCollection?.findOne(RoommateUser::email eq email)
+        } catch (e: Exception) {
+            logger.error("Error finding roommate by email", e)
+            null
+        }
+    }
+
     suspend fun getRoommatesByIds(ids: List<String>): List<RoommateUser> {
         return try {
             roommatesCollection?.find(RoommateUser::id `in` ids)?.toList() ?: emptyList()
