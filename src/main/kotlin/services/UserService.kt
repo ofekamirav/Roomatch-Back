@@ -4,7 +4,6 @@ import com.database.DatabaseManager
 import com.models.*
 import com.utils.Hashing
 import com.utils.JWTUtils
-import org.litote.kmongo.MongoOperator
 import org.litote.kmongo.eq
 
 
