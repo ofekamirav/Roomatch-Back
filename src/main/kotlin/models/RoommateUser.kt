@@ -80,7 +80,10 @@ enum class CondoPreference {
     PET_ALLOWED,
     SHELTER,
     FURNISHED,
-    PARKING
+    PARKING,
+    GYM,
+    GARDEN,
+    ROOFTOP
 }
 
 @Serializable

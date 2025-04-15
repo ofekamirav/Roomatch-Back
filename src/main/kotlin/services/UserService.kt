@@ -79,9 +79,9 @@ object UserService {
     }
 
     suspend fun login(email: String, password: String): Map<String, Any> {
-        val roommate = DatabaseManager.getRoommatesCollection()?.findOne(RoommateUser::email eq email)
+        val roommate = getRoomateByEmail(email)
         val owner = if (roommate == null) {
-            DatabaseManager.getOwnersCollection()?.findOne(PropertyOwnerUser::email eq email)
+            DatabaseManager.getOwnerByEmail(email)
         } else null
 
         if (roommate == null && owner == null) {

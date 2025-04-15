@@ -29,6 +29,45 @@ paths:
         '500':
           description: Internal server error
 
+  /login:
+    post:
+      tags:
+        - Auth
+      summary: Login a user
+      description: Login a user and return a JWT token and user type
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: User login request
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  example: "ofek@gmail.com"
+                password:
+                  type: string
+                  example: "123456"
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+
+        '401':
+          description: Invalid credentials
+        '500':
+          description: Internal server error
+
+
+
+
   /owners/register:
     post:
       tags:
@@ -292,6 +331,7 @@ components:
       required:
         - id
         - token
+        - refreshToken
         - userType
       properties:
         id:
@@ -300,6 +340,9 @@ components:
         token:
           type: string
           example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+        refreshToken:
+            type: string
+            example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
         userType:
           type: string
           example: "Roommate"
@@ -348,7 +391,7 @@ components:
       properties:
         preference:
           type: string
-          enum: [ BALCONY, ELEVATOR, PET_ALLOWED, SHELTER, FURNISHED, PARKING ]
+          enum: [ BALCONY, ELEVATOR, PET_ALLOWED, SHELTER, FURNISHED, PARKING, GYM, GARDEN, ROOFTOP ]
           example: "BALCONY"
         weight:
           type: number
