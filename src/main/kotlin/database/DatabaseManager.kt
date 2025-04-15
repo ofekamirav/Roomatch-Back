@@ -155,6 +155,16 @@ object DatabaseManager {
         }
     }
 
+    suspend fun updateOwner(user: PropertyOwnerUser): PropertyOwnerUser? {
+        return try {
+            ownersCollection?.updateOneById(user.id, user)
+            user
+        } catch (e: Exception) {
+            logger.error("Error updating owner", e)
+            null
+        }
+    }
+
 
 
 
