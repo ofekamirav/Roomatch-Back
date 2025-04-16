@@ -47,7 +47,7 @@ object JWTUtils {
             .build()
     }
 
-    private suspend fun updateRefreshToken(user: Any, refreshToken: String) {
+    suspend fun updateRefreshToken(user: Any, refreshToken: String) {
         when (user) {
             is RoommateUser -> DatabaseManager.getRoommatesCollection()?.updateOne(
                 RoommateUser::id eq user.id,

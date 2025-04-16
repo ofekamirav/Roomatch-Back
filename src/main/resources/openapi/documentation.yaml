@@ -65,7 +65,49 @@ paths:
         '500':
           description: Internal server error
 
-
+  /auth/refresh:
+    post:
+      tags:
+        - Auth
+      summary: Refresh JWT token
+      description: Refresh the JWT token using the refresh token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Refresh token request
+              required:
+                - refreshToken
+              properties:
+                token:
+                  type: string
+                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+                refreshToken:
+                  type: string
+                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - token
+                  - refreshToken
+                properties:
+                  token:
+                    type: string
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+                  refreshToken:
+                    type: string
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+        '401':
+          description: Invalid refresh token
+        '500':
+          description: Internal server error
 
 
   /owners/register:
@@ -98,6 +140,8 @@ paths:
         - Properties
       summary: Upload a new property
       description: Adds a new property associated with an owner
+      security:
+        - bearerAuth: [ ]
       parameters:
         - name: ownerId
           in: path
@@ -128,6 +172,8 @@ paths:
         - Properties
       summary: Get all properties of a specific owner
       description: Returns all properties associated with a property owner
+      security:
+        - bearerAuth: [ ]
       parameters:
         - name: ownerId
           in: path
@@ -156,6 +202,8 @@ paths:
         - Matching
       summary: Get next match for seeker
       description: Returns a single match for the seeker.
+      security:
+        - bearerAuth: [ ]
       parameters:
         - name: seekerId
           in: path
@@ -232,6 +280,8 @@ paths:
         - Likes
       summary: Save a liked match
       description: Saves a match that the seeker has liked.
+      security:
+        - bearerAuth: [ ]
       requestBody:
         required: true
         content:
@@ -256,6 +306,8 @@ paths:
         - Likes
       summary: Get all liked matches by seeker
       description: Retrieves all matches that a specific seeker has liked.
+      security:
+        - bearerAuth: [ ]
       parameters:
         - name: seekerId
           in: path
@@ -280,6 +332,12 @@ paths:
 
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   schemas:
     Match:
       type: object

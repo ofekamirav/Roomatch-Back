@@ -15,7 +15,7 @@ fun Routing.configureAuthRoutes() {
 
         post("/refresh") {
             try {
-                val request = call.receive<Map<String, String>>()
+                val request = call.receive<Map<String, String>>() // receives access and refresh tokens
                 val refreshToken = request["refreshToken"] ?: return@post call.respond(
                     HttpStatusCode.BadRequest,
                     mapOf("error" to "Refresh Token is required")
@@ -26,22 +26,34 @@ fun Routing.configureAuthRoutes() {
                 val email = decodedJWT.getClaim("email").asString()
 
                 //Check if the user exists and the refresh token is valid
-                val user = DatabaseManager.getRoommatesCollection()?.findOne(RoommateUser::email eq email)
-
-                if (user == null || user.refreshToken != refreshToken) {
+                val roomate = DatabaseManager.getRoomateByEmail(email)
+                val owner = if (roomate != null) {
+                    DatabaseManager.getOwnerByEmail(email)
+                }else null
+                if ((roomate?.refreshToken ?: owner?.refreshToken) != refreshToken) {
                     return@post call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Invalid Refresh Token"))
                 }
 
-                //Generate a new access token
-                val newAccessToken = JWTUtils.generateToken(user.email)
+                // Generate new tokens
+                val newAccessToken = JWTUtils.generateToken(email)
+                val newRefreshToken = JWTUtils.generateRefreshToken(email)
 
-                val response = mapOf("token" to newAccessToken)
-                call.respond(HttpStatusCode.OK, response)
+                if (roomate != null){
+                    JWTUtils.updateRefreshToken(roomate, newRefreshToken)
+                } else if (owner != null){
+                    JWTUtils.updateRefreshToken(owner, newRefreshToken)
+                }
+
+
+                call.respond(HttpStatusCode.OK, mapOf(
+                    "token" to newAccessToken,
+                    "refreshToken" to newRefreshToken,
+                ))
 
             } catch (e: Exception) {
                 call.respond(
                     HttpStatusCode.InternalServerError,
-                    mapOf("error" to (e.message ?: "Internal server error"))
+                    mapOf("error" to (e.message ?: "Internal error"))
                 )
             }
         }

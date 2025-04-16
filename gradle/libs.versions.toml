@@ -2,6 +2,7 @@
 [versions]
 kotlin-version = "2.1.10"
 ktor-version = "3.1.1"
+ktor-auth = "2.3.4"
 logback-version = "1.4.14"
 auth0 = "4.4.0"
 kmongo = "4.10.0"
@@ -27,6 +28,8 @@ ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negoti
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor-version" }
 ktor-client-serialization = { module = "io.ktor:ktor-client-serialization", version.ref = "ktor-version" }
 ktor-client-json = { module = "io.ktor:ktor-client-json", version.ref = "ktor-version" }
+ktor-server-auth = { module = "io.ktor:ktor-server-auth", version.ref = "ktor-auth" }
+ktor-server-auth-jwt = { module = "io.ktor:ktor-server-auth-jwt", version.ref = "ktor-auth" }
 
 
 
