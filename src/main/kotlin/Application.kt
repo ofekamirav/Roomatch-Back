@@ -1,5 +1,6 @@
 package com
 
+import com.utils.configureMiddleware
 import io.ktor.server.application.*
 import io.github.cdimascio.dotenv.dotenv
 
@@ -16,6 +17,7 @@ fun Application.module() {
     println("▶▶ Host: ${environment.propertyOrNull("ktor.deployment.host")?.getString()}")
     println("▶▶ Port: ${environment.propertyOrNull("ktor.deployment.port")?.getString()}")
     configureSerialization()
+    configureMiddleware()
     configureHTTP()
     configureRouting()
 }

@@ -31,6 +31,8 @@ dependencies {
     implementation(libs.ktor.server.swagger)
     implementation(libs.ktor.server.swagger)
     implementation(libs.ktor.server.netty)
+    implementation(libs.ktor.server.auth)
+    implementation(libs.ktor.server.auth.jwt)
     implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.jbcrypt)
     implementation(libs.java.jwt)
@@ -40,4 +42,5 @@ dependencies {
     implementation(libs.ktor.server.config.yaml)
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.kotlin.test.junit)
+
 }
