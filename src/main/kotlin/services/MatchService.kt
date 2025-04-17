@@ -28,6 +28,11 @@ object MatchService {
         val allPropertiesDeferred = coroutineScope.async { DatabaseManager.getAllAvailableProperties() }
         val allRoommatesDeferred = coroutineScope.async { DatabaseManager.getAllRoommates() }
 
+        val dislike = DatabaseManager.getDislikesBySeekerId(seekerId)
+        val dislikedProperties = dislike?.dislikedPropertiesIds ?: emptyList()
+        val dislikedRoommates = dislike?.dislikedRoommatesIds ?: emptyList()
+
+
         //wait for the properties and roommates to be fetched
         val allProperties = allPropertiesDeferred.await()
         val allRoommates = allRoommatesDeferred.await()
@@ -42,8 +47,18 @@ object MatchService {
 
         logger.info("Preferred location properties count: ${locationProperties.size}")
 
+        // Filter out disliked properties
+        val filteredProperties = locationProperties.filter { property ->
+            !dislikedProperties.contains(property.id)
+        }
+
+        // Filter out disliked roommates
+        val filteredRoommates = allRoommates.filter { roommate ->
+            !dislikedRoommates.contains(roommate.id)
+        }
+
         // Filter available properties based on available slots and seeker preferences
-        val potentialProperties = locationProperties.filter { property ->
+        val potentialProperties = filteredProperties.filter { property ->
             when (property.type) {
                 PropertyType.ROOM ->
                     property.CurrentRoommatesIds.size < property.canContainRoommates!! &&
@@ -64,7 +79,7 @@ object MatchService {
             //Filter out roommates that already live in this ROOM
             val roommatesInProperty = if (property.type == PropertyType.ROOM) property.CurrentRoommatesIds else emptyList()
 
-            val potentialRoommates = allRoommates.filter { roommate ->
+            val potentialRoommates = filteredRoommates.filter { roommate ->
                 roommate.id != seekerId &&
                         (roommate.roommatesNumber == seeker.roommatesNumber) &&
                         !roommatesInProperty.contains(roommate.id) // Exclude existing roommate
