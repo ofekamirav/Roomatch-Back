@@ -27,6 +27,7 @@ object DatabaseManager {
     private var ownersCollection: CoroutineCollection<PropertyOwnerUser>? = null
     private var propertiesCollection: CoroutineCollection<Property>? = null
     private var matchesCollection: CoroutineCollection<Match>? = null
+    private var dislikesCollection: CoroutineCollection<DisLike>? = null
     private val logger = LoggerFactory.getLogger(DatabaseManager::class.java)
 
     init {
@@ -36,6 +37,7 @@ object DatabaseManager {
             ownersCollection = database?.getCollection("owners")
             propertiesCollection = database?.getCollection("properties")
             matchesCollection = database?.getCollection("matches")
+            dislikesCollection = database?.getCollection("dislikes")
         } catch (e: Exception) {
             logger.error("Error in init database", e)
         }
@@ -171,10 +173,6 @@ object DatabaseManager {
 //-------------------------Properties---------------------------------------------------------------
 
 
-    fun getPropertiesCollection(): CoroutineCollection<Property>? {
-        return propertiesCollection
-    }
-
     suspend fun getAllAvailableProperties(): List<Property> {
         try {
             val properties = propertiesCollection?.find(Property::available eq true)?.toList()
@@ -226,10 +224,6 @@ object DatabaseManager {
 
 //---------------------------Matches------------------------------------------------------------------------------
 
-    fun getMatchesCollection(): CoroutineCollection<Match>? {
-        return matchesCollection
-    }
-
     suspend fun insertMatch(match: Match): Match? {
         return try {
             matchesCollection?.insertOne(match)
@@ -258,6 +252,26 @@ object DatabaseManager {
         }
     }
 
+    //---------------------------Dislikes------------------------------------------------------------------------------
+
+    suspend fun getDislikesBySeekerId(seekerId: String): DisLike? {
+        return try {
+            dislikesCollection?.findOne(DisLike::seekerId eq seekerId)
+        } catch (e: Exception) {
+            logger.error("Error fetching dislikes by seeker ID", e)
+            null
+        }
+    }
+
+    suspend fun insertDislike(dislike: DisLike): DisLike? {
+        return try {
+            dislikesCollection?.insertOne(dislike)
+            dislike
+        } catch (e: Exception) {
+            logger.error("Error inserting dislike", e)
+            null
+        }
+    }
 
 
 }
