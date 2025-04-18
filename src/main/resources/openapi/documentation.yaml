@@ -449,7 +449,7 @@ components:
       properties:
         preference:
           type: string
-          enum: [ BALCONY, ELEVATOR, PET_ALLOWED, SHELTER, FURNISHED, PARKING, GYM, GARDEN, ROOFTOP ]
+          enum: [ BALCONY, ELEVATOR, PET_VERIFY, SHELTER, FURNISHED, PARKING, GYM, GARDEN, ROOFTOP ]
           example: "BALCONY"
         weight:
           type: number
@@ -707,7 +707,7 @@ components:
           type: array
           items:
             type: string
-          enum: [ BALCONY, ELEVATOR, PET_ALLOWED, SHELTER, FURNISHED, PARKING, GYM, GARDEN, ROOFTOP ]
+          enum: [ BALCONY, ELEVATOR, PET_VERIFY, SHELTER, FURNISHED, PARKING, GYM, GARDEN, ROOFTOP ]
           example: ["BALCONY", "ELEVATOR"]
         photos:
           type: array
