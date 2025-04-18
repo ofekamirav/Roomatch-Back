@@ -430,7 +430,7 @@ components:
       properties:
         attribute:
           type: string
-          enum: [ SMOKER, STUDENT, PET_LOVER, PET_OWNER, VEGETARIAN, CLEAN, NIGHT_WORKER, IN_RELATIONSHIP, KOSHER, JEWISH, MUSLIM, CHRISTIAN, REMOTE_WORKER, ATHEIST, QUIET ]
+          enum: [ SMOKER, STUDENT, PET_LOVER, HAS_PET, VEGETARIAN, CLEAN, NIGHT_JOB, TAKEN, KOSHER, JEWISH, MUSLIM, CHRISTIAN, REMOTE_JOB, ATHEIST, QUIET ]
           example: "QUIET"
         weight:
           type: number
@@ -504,13 +504,13 @@ components:
           type: array
           items:
             type: string
-            enum: [SMOKER, STUDENT, PET_LOVER, PET_OWNER, VEGETARIAN, CLEAN, NIGHT_WORKER, IN_RELATIONSHIP, KOSHER, JEWISH, MUSLIM, CHRISTIAN, REMOTE_WORKER, ATHEIST, QUIET]
+          enum: [ SMOKER, STUDENT, PET_LOVER, HAS_PET, VEGETARIAN, CLEAN, NIGHT_JOB, TAKEN, KOSHER, JEWISH, MUSLIM, CHRISTIAN, REMOTE_JOB, ATHEIST, QUIET ]
           example: ["CLEAN", "QUIET", "VEGETARIAN"]
         hobbies:
           type: array
           items:
             type: string
-            enum: [MUSICIAN, SPORT, COOKER, PARTY, TV, GAMER, ARTIST, DANCER, WRITER]
+            enum: [MUSICIAN, SPORT, COOKER, PARTY, TV, GAMER, ARTIST, DANCER, WRITER, YOGA, TRAVELER, READER]
           example: ["SPORT", "GAMER"]
         lookingForRoomies:
           type: array
@@ -594,13 +594,13 @@ components:
           type: array
           items:
             type: string
-            enum: [ MUSICIAN, SPORT, COOKER, PARTY, TV, GAMER, ARTIST, DANCER, WRITER ]
+            enum: [MUSICIAN, SPORT, COOKER, PARTY, TV, GAMER, ARTIST, DANCER, WRITER, YOGA, TRAVELER, READER]
           example: [ "SPORT", "TV" ]
         attributes:
           type: array
           items:
             type: string
-            enum: [ SMOKER, STUDENT, PET_LOVER, PET_OWNER, VEGETARIAN, CLEAN, NIGHT_WORKER, IN_RELATIONSHIP, KOSHER, JEWISH, MUSLIM, CHRISTIAN, REMOTE_WORKER, ATHEIST, QUIET ]
+          enum: [ SMOKER, STUDENT, PET_LOVER, HAS_PET, VEGETARIAN, CLEAN, NIGHT_JOB, TAKEN, KOSHER, JEWISH, MUSLIM, CHRISTIAN, REMOTE_JOB, ATHEIST, QUIET ]
           example: [ "CLEAN", "QUIET", "VEGETARIAN" ]
         work:
           type: string
@@ -707,7 +707,7 @@ components:
           type: array
           items:
             type: string
-            enum: [BALCONY, ELEVATOR, PET_ALLOWED, SHELTER, FURNISHED, PARKING]
+          enum: [ BALCONY, ELEVATOR, PET_ALLOWED, SHELTER, FURNISHED, PARKING, GYM, GARDEN, ROOFTOP ]
           example: ["BALCONY", "ELEVATOR"]
         photos:
           type: array
