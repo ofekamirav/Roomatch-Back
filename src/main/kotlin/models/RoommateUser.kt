@@ -80,7 +80,7 @@ enum class Hobby{
 enum class CondoPreference {
     BALCONY,
     ELEVATOR,
-    PET_ALLOWED,
+    PET_VERIFY,
     SHELTER,
     FURNISHED,
     PARKING,
