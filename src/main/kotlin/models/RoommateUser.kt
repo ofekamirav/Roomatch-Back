@@ -45,16 +45,16 @@ enum class Attribute {
     SMOKER,
     STUDENT,
     PET_LOVER,
-    PET_OWNER,
-    VEGETARIAN,
+    HAS_PET,
+    VEGGIE,
     CLEAN,
-    NIGHT_WORKER,
-    IN_RELATIONSHIP,
+    NIGHT_JOB,
+    TAKEN,
     KOSHER,
     JEWISH,
     MUSLIM,
     CHRISTIAN,
-    REMOTE_WORKER,
+    REMOTE_JOB,
     ATHEIST,
     QUIET
 }
@@ -69,7 +69,10 @@ enum class Hobby{
     GAMER,
     ARTIST,
     DANCER,
-    WRITER
+    WRITER,
+    YOGA,
+    READER,
+    TRAVELER
 }
 
 
@@ -81,9 +84,9 @@ enum class CondoPreference {
     SHELTER,
     FURNISHED,
     PARKING,
-    GYM,
+    ROOFTOP,
     GARDEN,
-    ROOFTOP
+    GYM
 }
 
 @Serializable
