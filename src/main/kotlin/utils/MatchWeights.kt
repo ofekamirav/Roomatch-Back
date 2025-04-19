@@ -19,12 +19,12 @@ object MatchWeights {
         Attribute.STUDENT to 0.25,
         Attribute.SMOKER to 0.25,
         Attribute.PET_LOVER to 0.25,
-        Attribute.PET_OWNER to 0.25,
-        Attribute.REMOTE_WORKER to 0.25,
-        Attribute.NIGHT_WORKER to 0.25,
-        Attribute.IN_RELATIONSHIP to 0.25,
+        Attribute.HAS_PET to 0.25,
+        Attribute.REMOTE_JOB to 0.25,
+        Attribute.NIGHT_JOB to 0.25,
+        Attribute.TAKEN to 0.25,
         Attribute.KOSHER to 0.25,
-        Attribute.VEGETARIAN to 0.25,
+        Attribute.VEGGIE to 0.25,
         Attribute.JEWISH to 0.25,
         Attribute.MUSLIM to 0.25,
         Attribute.CHRISTIAN to 0.25,
@@ -39,7 +39,7 @@ object MatchWeights {
         CondoPreference.ELEVATOR to 0.25,
         CondoPreference.FURNISHED to 0.25,
         CondoPreference.PARKING to 0.25,
-        CondoPreference.PET_ALLOWED to 0.25
+        CondoPreference.PET_VERIFY to 0.25
     )
 
 }
