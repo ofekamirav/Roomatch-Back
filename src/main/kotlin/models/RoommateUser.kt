@@ -31,6 +31,9 @@ data class RoommateUser(
     val preferredRadiusKm: Int = 10,
     val latitude: Double? = null,
     val longitude: Double? = null,
+    val resetToken: String? = null,
+    val resetTokenExpiration: Long? = null
+
 )
 
 @Serializable

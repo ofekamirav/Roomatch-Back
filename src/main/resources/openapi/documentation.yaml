@@ -331,6 +331,92 @@ paths:
 
 
 
+
+  /auth/request-password-reset:
+    post:
+      tags:
+        - Authentication
+      summary: Request a password reset token
+      description: Generates a password reset token for the specified email and user type.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - userType
+              properties:
+                email:
+                  type: string
+                  example: "user@example.com"
+                userType:
+                  type: string
+                  enum: [ Roommate, PropertyOwner ]
+                  example: "Roommate"
+      responses:
+        '200':
+          description: Password reset token successfully generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Password reset token generated successfully."
+        '400':
+          description: Unable to generate reset token
+        '500':
+          description: Internal server error
+
+  /auth/reset-password:
+    post:
+      tags:
+        - Authentication
+      summary: Reset password using token
+      description: Resets user's password after validating the reset token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+                - newPassword
+                - userType
+              properties:
+                token:
+                  type: string
+                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                newPassword:
+                  type: string
+                  example: "NewSecurePassword123"
+                userType:
+                  type: string
+                  enum: [ Roommate, PropertyOwner ]
+                  example: "Roommate"
+      responses:
+        '200':
+          description: Password successfully reset
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Password reset successfully."
+        '400':
+          description: Invalid or expired token
+        '500':
+          description: Internal server error
+
+
+
+
 components:
   securitySchemes:
     bearerAuth:

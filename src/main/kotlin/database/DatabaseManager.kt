@@ -11,6 +11,7 @@ import org.litote.kmongo.`in`
 import org.slf4j.LoggerFactory
 import io.github.cdimascio.dotenv.dotenv
 import java.net.URLEncoder
+import org.litote.kmongo.*
 
 
 object DatabaseManager {
@@ -108,6 +109,57 @@ object DatabaseManager {
         }
     }
 
+    // Set reset token for roommate user
+    suspend fun setRoommateResetToken(email: String, token: String, expiration: Long): Boolean {
+        return try {
+            val updateResult = roommatesCollection?.updateOne(
+                RoommateUser::email eq email,
+                set(
+                    RoommateUser::resetToken setTo token,
+                    RoommateUser::resetTokenExpiration setTo expiration
+                )
+            )
+            updateResult?.modifiedCount == 1L
+        } catch (e: Exception) {
+            logger.error("Error setting reset token for roommate", e)
+            false
+        }
+    }
+
+    // Find roommate by reset token
+    suspend fun findRoommateByResetToken(token: String): RoommateUser? {
+        return try {
+            roommatesCollection?.findOne(
+                and(
+                    RoommateUser::resetToken eq token,
+                    RoommateUser::resetTokenExpiration gt System.currentTimeMillis()
+                )
+            )
+        } catch (e: Exception) {
+            logger.error("Error finding roommate by reset token", e)
+            null
+        }
+    }
+
+    // Update roommate's password and clear reset token
+    suspend fun resetRoommatePassword(email: String, hashedPassword: String): Boolean {
+        return try {
+            val updateResult = roommatesCollection?.updateOne(
+                RoommateUser::email eq email,
+                combine(
+                    setValue(RoommateUser::password, hashedPassword),
+                    setValue(RoommateUser::resetToken, null),
+                    setValue(RoommateUser::resetTokenExpiration, null)
+                )
+            )
+            updateResult?.modifiedCount == 1L
+        } catch (e: Exception) {
+            logger.error("Error resetting roommate password", e)
+            false
+        }
+    }
+
+
 
 
 
@@ -164,6 +216,57 @@ object DatabaseManager {
             null
         }
     }
+
+    // Set reset token for property owner user
+    suspend fun setOwnerResetToken(email: String, token: String, expiration: Long): Boolean {
+        return try {
+            val updateResult = ownersCollection?.updateOne(
+                PropertyOwnerUser::email eq email,
+                set(
+                    PropertyOwnerUser::resetToken setTo token,
+                    PropertyOwnerUser::resetTokenExpiration setTo expiration
+                )
+            )
+            updateResult?.modifiedCount == 1L
+        } catch (e: Exception) {
+            logger.error("Error setting reset token for owner", e)
+            false
+        }
+    }
+
+    // Find owner by reset token
+    suspend fun findOwnerByResetToken(token: String): PropertyOwnerUser? {
+        return try {
+            ownersCollection?.findOne(
+                and(
+                    PropertyOwnerUser::resetToken eq token,
+                    PropertyOwnerUser::resetTokenExpiration gt System.currentTimeMillis()
+                )
+            )
+        } catch (e: Exception) {
+            logger.error("Error finding owner by reset token", e)
+            null
+        }
+    }
+
+    // Update owner's password and clear reset token
+    suspend fun resetOwnerPassword(email: String, hashedPassword: String): Boolean {
+        return try {
+            val updateResult = ownersCollection?.updateOne(
+                PropertyOwnerUser::email eq email,
+                combine(
+                    setValue(PropertyOwnerUser::password, hashedPassword),
+                    setValue(PropertyOwnerUser::resetToken, null),
+                    setValue(PropertyOwnerUser::resetTokenExpiration, null)
+                )
+            )
+            updateResult?.modifiedCount == 1L
+        } catch (e: Exception) {
+            logger.error("Error resetting owner password", e)
+            false
+        }
+    }
+
 
 
 
