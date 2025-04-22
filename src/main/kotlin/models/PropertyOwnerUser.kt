@@ -15,4 +15,7 @@ data class PropertyOwnerUser(
     val password: String,
     val refreshToken: String?=null,
     val profilePicture: String?=null,
+    val resetToken: String? = null,
+    val resetTokenExpiration: Long? = null
+
 )
