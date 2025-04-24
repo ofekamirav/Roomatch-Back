@@ -1,4 +1,5 @@
 package com.routes
+
 import com.services.LikeController
 import com.models.Match
 import io.ktor.http.*
@@ -11,7 +12,7 @@ fun Routing.configureLikeRoutes() {
 
     route("/likes") {
 
-        // POST /likes - Save a new Match (like)
+        // POST /likes - Save a new Match (like) with custom dislike logic
         post {
             try {
                 val match = call.receive<Match>()
