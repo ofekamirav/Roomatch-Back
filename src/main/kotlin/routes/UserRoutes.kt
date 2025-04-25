@@ -11,7 +11,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
-
+import com.models.*
 @Serializable
 data class UserResponse(val token: String?, val refreshToken: String?, val userId: String?, val userType: String?)
 
@@ -102,4 +102,45 @@ fun Routing.configureUserRoutes() {
             }
         }
     }
+
+    route("/auth") {
+
+        // Request Password Reset
+        post("/request-password-reset") {
+            try {
+                val request = call.receive<PasswordResetRequest>()
+                val success = UserService.requestPasswordReset(request.email, request.userType)
+
+                if (success) {
+                    call.respond(HttpStatusCode.OK, mapOf("message" to "Password reset token generated successfully."))
+                } else {
+                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Unable to generate reset token. Check email or user type."))
+                }
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "Internal server error")))
+            }
+        }
+
+        // Reset Password
+        post("/reset-password") {
+            try {
+                val request = call.receive<ResetPassword>()
+                val success = UserService.resetPassword(request.token, request.newPassword, request.userType)
+
+                if (success) {
+                    call.respond(HttpStatusCode.OK, mapOf("message" to "Password reset successfully."))
+                } else {
+                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid or expired token."))
+                }
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "Internal server error")))
+            }
+        }
+    }
 }
+
+@Serializable
+data class PasswordResetRequest(val email: String, val userType: String)
+
+@Serializable
+data class ResetPassword(val token: String, val newPassword: String, val userType: String)

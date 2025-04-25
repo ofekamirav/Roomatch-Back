@@ -10,6 +10,7 @@ import org.litote.kmongo.eq
 import org.litote.kmongo.setValue
 
 
+
 object UserService {
 
     //Register a roommate user
@@ -116,5 +117,42 @@ object UserService {
             "userType" to userType
         )
     }
+
+    //reset a user password
+
+
+
+    suspend fun requestPasswordReset(email: String, userType: String): Boolean {
+        val resetToken = JWTUtils.generateToken(email)  // Generates JWT token
+        val expiration = System.currentTimeMillis() + 3600000  // 1 hour validity
+
+        return when (userType) {
+            "Roommate" -> DatabaseManager.setRoommateResetToken(email, resetToken, expiration)
+            "PropertyOwner" -> DatabaseManager.setOwnerResetToken(email, resetToken, expiration)
+            else -> false
+        }
+    }
+
+
+    suspend fun resetPassword(token: String, newPassword: String, userType: String): Boolean {
+        val hashedPassword = Hashing.hashPassword(newPassword)
+
+        return when (userType) {
+            "Roommate" -> {
+                val user = DatabaseManager.findRoommateByResetToken(token)
+                if (user != null) {
+                    DatabaseManager.resetRoommatePassword(user.email, hashedPassword)
+                } else false
+            }
+            "PropertyOwner" -> {
+                val user = DatabaseManager.findOwnerByResetToken(token)
+                if (user != null) {
+                    DatabaseManager.resetOwnerPassword(user.email, hashedPassword)
+                } else false
+            }
+            else -> false
+        }
+    }
+
 
 }
