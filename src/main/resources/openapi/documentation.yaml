@@ -331,7 +331,7 @@ paths:
   /likes/property:
     post:
       tags:
-        -Likes
+        - Likes
       summary: Dislike a roommates from the match
       description: Dislike a roommates from the match
       security:
@@ -357,7 +357,7 @@ paths:
   /likes/roommates:
       post:
         tags:
-          -Likes
+          - Likes
         summary: Dislike a property from the match
         description: Dislike a property from the match
         security:
@@ -384,7 +384,7 @@ paths:
   /auth/request-password-reset:
     post:
       tags:
-        - Authentication
+        - Auth
       summary: Request a password reset token
       description: Generates a password reset token for the specified email and user type.
       requestBody:
@@ -423,7 +423,7 @@ paths:
   /auth/reset-password:
     post:
       tags:
-        - Authentication
+        - Auth
       summary: Reset password using token
       description: Resets user's password after validating the reset token.
       requestBody:
