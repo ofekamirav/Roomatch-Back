@@ -27,6 +27,7 @@ object DatabaseManager {
     private var ownersCollection: CoroutineCollection<PropertyOwnerUser>? = null
     private var propertiesCollection: CoroutineCollection<Property>? = null
     private var matchesCollection: CoroutineCollection<Match>? = null
+    private var disLikeCollection: CoroutineCollection<DisLike>? = null
     private val logger = LoggerFactory.getLogger(DatabaseManager::class.java)
 
     init {
@@ -36,6 +37,7 @@ object DatabaseManager {
             ownersCollection = database?.getCollection("owners")
             propertiesCollection = database?.getCollection("properties")
             matchesCollection = database?.getCollection("matches")
+            disLikeCollection = database?.getCollection("dislikes")
         } catch (e: Exception) {
             logger.error("Error in init database", e)
         }
@@ -258,6 +260,80 @@ object DatabaseManager {
         }
     }
 
+
+//------------------------------Dislikes--------------------------------------------------------------
+
+
+    suspend fun insertDisLike(dislike: DisLike): DisLike? {
+        return try {
+            disLikeCollection?.insertOne(dislike)
+            dislike
+        } catch (e: Exception) {
+            logger.error("Error inserting dislike", e)
+            null
+        }
+    }
+
+    suspend fun getDisLikeBySeekerId(seekerId: String): DisLike? {
+        return try {
+            disLikeCollection?.findOne(DisLike::seekerId eq seekerId)
+        } catch (e: Exception) {
+            logger.error("Error fetching dislike by seeker ID", e)
+            null
+        }
+    }
+
+    suspend fun getDislikeRoommatesIds(seekerId: String): List<String> {
+        return try {
+            val disLike = disLikeCollection?.findOne(DisLike::seekerId eq seekerId)
+            disLike?.dislikedRoommatesIds ?: emptyList()
+        } catch (e: Exception) {
+            logger.error("Error fetching disliked roommates IDs", e)
+            emptyList()
+        }
+    }
+
+    suspend fun getDislikePropertiesIds(seekerId: String): List<String> {
+        return try {
+            val disLike = disLikeCollection?.findOne(DisLike::seekerId eq seekerId)
+            disLike?.dislikedPropertiesIds ?: emptyList()
+        } catch (e: Exception) {
+            logger.error("Error fetching disliked properties IDs", e)
+            emptyList()
+        }
+    }
+
+    suspend fun updateDislikeRoommates(seekerId: String, dislikedRoommatesIds: List<String>): DisLike? {
+        return try {
+            val disLike = disLikeCollection?.findOne(DisLike::seekerId eq seekerId)
+            if (disLike != null) {
+                disLike.dislikedRoommatesIds = dislikedRoommatesIds
+                disLikeCollection?.updateOneById(disLike.id, disLike)
+                disLike
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            logger.error("Error updating disliked roommates IDs", e)
+            null
+        }
+    }
+
+    suspend fun updateDislikeProperties(seekerId: String, dislikedPropertiesIds: List<String>): DisLike? {
+        return try {
+            val disLike = disLikeCollection?.findOne(DisLike::seekerId eq seekerId)
+            if (disLike != null) {
+                disLike.dislikedPropertiesIds = dislikedPropertiesIds
+                disLikeCollection?.updateOneById(disLike.id, disLike)
+                disLike
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            logger.error("Error updating disliked properties IDs", e)
+            null
+        }
+    }
 
 
 }
