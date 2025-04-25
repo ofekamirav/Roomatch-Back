@@ -42,5 +42,35 @@ fun Routing.configureLikeRoutes() {
                 call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "Internal server error")))
             }
         }
+
+        // POST /likes/property - Like a property and dislike roommates
+        post("/property") {
+            try {
+                val match = call.receive<Match>()
+                val dislikeResult = LikeController.likeProperty(match)
+                if (dislikeResult != null) {
+                    call.respond(HttpStatusCode.OK, dislikeResult)
+                } else {
+                    call.respond(HttpStatusCode.OK, mapOf("message" to "Property liked, no dislikes updated"))
+                }
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "Internal server error")))
+            }
+        }
+
+        // POST /likes/roommates - Like a roommate and dislike properties
+        post("/roommates") {
+            try {
+                val match = call.receive<Match>()
+                val disLikeResult = LikeController.likeRoommate(match)
+                if (disLikeResult != null) {
+                    call.respond(HttpStatusCode.OK, disLikeResult)
+                } else {
+                    call.respond(HttpStatusCode.OK, mapOf("message" to "Roommate liked, no dislikes updated"))
+                }
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "Internal server error")))
+            }
+        }
     }
 }

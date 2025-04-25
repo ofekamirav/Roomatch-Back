@@ -329,7 +329,57 @@ paths:
         '500':
           description: Internal server error
 
+  /likes/property:
+    post:
+      tags:
+        -Likes
+      summary: Dislike a roommates from the match
+      description: Dislike a roommates from the match
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+            required: true
+            content:
+                application/json:
+                  schema:
+                      $ref: '#/components/schemas/Match'
+      responses:
+          '201':
+              description: Dislike roommates successfully saved
+              content:
+                  application/json:
+                      schema:
+                          $ref: '#/components/schemas/Dislike'
+          '400':
+              description: Error creating disliked match
+          '500':
+              description: Internal server error
 
+  /likes/roommates:
+      post:
+        tags:
+          -Likes
+        summary: Dislike a property from the match
+        description: Dislike a property from the match
+        security:
+          - bearerAuth: [ ]
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Match'
+        responses:
+          '201':
+            description: Dislike roommates successfully saved
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Dislike'
+          '400':
+            description: Error creating disliked match
+          '500':
+            description: Internal server error
 
 
   /auth/request-password-reset:
@@ -505,6 +555,31 @@ components:
           type: string
           example: "Property successfully added."
 
+    Dislike:
+        type: object
+        description: Model representing a dislike action
+        required:
+            - id
+            - seekerId
+            - dislikedRoommatesIds
+            - dislikedPropertiesIds
+        properties:
+          id:
+            type: string
+            example: "65fa3d..."
+          seekerId:
+            type: string
+            example: "65fa3d..."
+          dislikedRoommatesIds:
+            type: array
+            items:
+              type: string
+            example: ["65fa3d...", "65fa3d..."]
+          dislikedPropertiesIds:
+            type: array
+            items:
+              type: string
+            example: ["65fa3d...", "65fa3d..."]
 
     LookingForRoomiesPreference:
       type: object
