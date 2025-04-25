@@ -109,7 +109,6 @@ paths:
         '500':
           description: Internal server error
 
-
   /owners/register:
     post:
       tags:
