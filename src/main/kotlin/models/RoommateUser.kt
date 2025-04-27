@@ -15,7 +15,7 @@ data class RoommateUser(
     val password: String,
     val refreshToken: String?=null,
     val profilePicture: String?=null,
-    val gender: Gender,
+    val gender: Gender?,
     val birthDate: String,
     val work: String,
     val attributes: List<Attribute>,
@@ -33,14 +33,13 @@ data class RoommateUser(
     val longitude: Double? = null,
     val resetToken: String? = null,
     val resetTokenExpiration: Long? = null
-
 )
 
 @Serializable
-enum class Gender {
-    MALE,
-    FEMALE,
-    OTHER
+enum class Gender(val lable: String) {
+    MALE("Male"),
+    FEMALE("Female"),
+    OTHER("Other")
 }
 
 @Serializable
