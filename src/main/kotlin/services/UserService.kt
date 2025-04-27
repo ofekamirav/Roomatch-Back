@@ -14,13 +14,12 @@ import org.litote.kmongo.setValue
 object UserService {
 
     //Register a roommate user
-    suspend fun registerRoommate(user: RoommateUser): Map<String, Any> {
+    suspend fun registerRoommate(user: RoommateUser): UserResponse {
         val existingUser = DatabaseManager.getRoommatesCollection()?.findOne(RoommateUser::email eq user.email)
         if (existingUser != null) {
-            return mapOf("error" to "User with this email already exists.")
+            throw IllegalArgumentException("User with this email already exists.")
         }
 
-        // Hashing password
         val hashedPassword = Hashing.hashPassword(user.password)
         val accessToken = JWTUtils.generateToken(user.email)
         val refreshToken = JWTUtils.generateRefreshToken(user.email)
@@ -29,24 +28,22 @@ object UserService {
         val newUser = user.copy(password = hashedPassword, refreshToken = refreshToken)
 
         val insertedUser = DatabaseManager.insertRoommate(newUser)
+            ?: throw IllegalStateException("Failed to create user.")
 
-        return if (insertedUser != null) {
-            mapOf(
-                "token" to accessToken,
-                "refreshToken" to refreshToken,
-                "userId" to insertedUser.id,
-                "userType" to roommateType
-            )
-        } else {
-            mapOf("error" to "Failed to create user.")
-        }
+        return UserResponse(
+            token = accessToken,
+            refreshToken = refreshToken,
+            userId = insertedUser.id,
+            userType = roommateType
+        )
     }
 
+
     //Register a property owner user
-    suspend fun registerPropertyOwner(user: PropertyOwnerUser): Map<String, Any> {
+    suspend fun registerPropertyOwner(user: PropertyOwnerUser):  Result<UserResponse> {
         val existingUser = DatabaseManager.getOwnersCollection()?.findOne(PropertyOwnerUser::email eq user.email)
         if (existingUser != null) {
-            return mapOf("error" to "User with this email already exists.")
+            throw IllegalArgumentException("User with this email already exists.")
         }
 
         // Hashing password
@@ -59,15 +56,18 @@ object UserService {
 
         val insertedUser = DatabaseManager.insertOwner(newUser)
 
+
         return if (insertedUser != null) {
-            mapOf(
-                "token" to accessToken,
-                "refreshToken" to refreshToken,
-                "userId" to insertedUser.id,
-                "userType" to ownerType
+            Result.success(
+                UserResponse(
+                    token = accessToken,
+                    refreshToken = refreshToken,
+                    userId = insertedUser.id,
+                    userType = ownerType
+                )
             )
         } else {
-            mapOf("error" to "Failed to create user.")
+            throw IllegalStateException("Failed to create user.")
         }
     }
 

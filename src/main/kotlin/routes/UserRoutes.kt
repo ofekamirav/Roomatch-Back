@@ -11,7 +11,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
-import com.models.*
+
 @Serializable
 data class UserResponse(val token: String?, val refreshToken: String?, val userId: String?, val userType: String?)
 
@@ -25,17 +25,19 @@ fun Routing.configureUserRoutes() {
         post("/register") {
             try {
                 val user = call.receive<RoommateUser>()
-                val result = UserService.registerRoommate(user)
-                if (result["error"] != null) {
-                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to result["error"]))
-                } else {
-                    val response = UserResponse(result["token"].toString(),result["refreshToken"].toString() ,result["userId"].toString(), result["userType"].toString())
-                    call.respond(HttpStatusCode.Created, response)
-                }
+                println("Received user from front side: $user")
+
+                val userResponse = UserService.registerRoommate(user)
+
+                call.respond(userResponse)
+
+            } catch (e: IllegalArgumentException) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to e.message))
             } catch (e: Exception) {
                 call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "Internal server error")))
             }
         }
+
 
         // Get roommate by ID
         get("/{id}") {
@@ -70,13 +72,14 @@ fun Routing.configureUserRoutes() {
         post("/register") {
             try {
                 val user = call.receive<PropertyOwnerUser>()
-                val result = UserService.registerPropertyOwner(user)
-                if (result["error"] != null) {
-                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to result["error"]))
-                } else {
-                    val response = UserResponse(result["token"].toString(),result["refreshToken"].toString() ,result["userId"].toString(), result["userType"].toString())
-                    call.respond(HttpStatusCode.Created, response)
-                }
+                println("Received user from front side: $user")
+
+                val userResponse = UserService.registerPropertyOwner(user)
+
+                call.respond(userResponse)
+
+            } catch (e: IllegalArgumentException) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to e.message))
             } catch (e: Exception) {
                 call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "Internal server error")))
             }
