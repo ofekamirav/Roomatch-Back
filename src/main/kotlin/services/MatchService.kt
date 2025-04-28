@@ -247,32 +247,26 @@ object MatchService {
 
 
 
-    suspend fun getNextMatchForSwipe(seekerId: String): Match? {
-        logger.info("getNextMatchForSwipe: seekerId = $seekerId")
+    suspend fun getNextMatchesForSwipe(seekerId: String, limit: Int): List<Match> {
+        logger.info("getNextMatchesForSwipe: seekerId = $seekerId, limit = $limit")
 
-        //Attempt to get from cache, if empty, perform a match to set the value in cache
         var matches = userMatchCache[seekerId]
 
-        if (matches == null) {
-            logger.info("getNextMatchForSwipe: No matches in cache, performing new match")
+        if (matches == null || matches.isEmpty()) {
             matches = performMatch(seekerId)
         }
-        //If matches is still empty, return null
+
         if (matches == null || matches.isEmpty()) {
-            logger.info("getNextMatchForSwipe: No matches found after performing match")
             userMatchCache.remove(seekerId)
-            return null
+            return emptyList()
         }
 
-        //Get the first match before removing it
-        val match = matches.first()
-        logger.info("getNextMatchForSwipe: Returning match with id = ${match.id}")
+        val nextMatches = matches.take(limit)
+        userMatchCache[seekerId] = matches.drop(limit)
 
-        //Update the cache, removeing the first one
-        userMatchCache[seekerId] = matches.drop(1)
-
-        return match
+        return nextMatches
     }
+
 
     //Clear the feed for the user
     fun clearUserFeed(seekerId: String) {

@@ -10,19 +10,21 @@ fun Route.configureMatchRoutes() {
     route("/match") {
         get("/{seekerId}") {
             val seekerId = call.parameters["seekerId"]
+            val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 1
 
             if (seekerId == null) {
-                call.respondText("Seeker Id is required", status = HttpStatusCode.BadRequest)
+                call.respond(HttpStatusCode.BadRequest, "Seeker Id is required")
                 return@get
             }
 
-            val match = MatchService.getNextMatchForSwipe(seekerId)
+            val matches = MatchService.getNextMatchesForSwipe(seekerId, limit)
 
-            if (match != null) {
-                call.respond(HttpStatusCode.OK, match)
+            if (matches.isNotEmpty()) {
+                call.respond(HttpStatusCode.OK, matches)
             } else {
                 call.respond(HttpStatusCode.NoContent, mapOf("message" to "No more matches"))
             }
         }
+
     }
 }

@@ -48,8 +48,8 @@ fun Routing.configureLikeRoutes() {
             try {
                 val match = call.receive<Match>()
                 val dislikeResult = LikeController.likeProperty(match)
-                if (dislikeResult != null) {
-                    call.respond(HttpStatusCode.OK, dislikeResult)
+                if (dislikeResult) {
+                    call.respond(HttpStatusCode.OK)
                 } else {
                     call.respond(HttpStatusCode.OK, mapOf("message" to "Property liked, no dislikes updated"))
                 }
@@ -63,8 +63,8 @@ fun Routing.configureLikeRoutes() {
             try {
                 val match = call.receive<Match>()
                 val disLikeResult = LikeController.likeRoommate(match)
-                if (disLikeResult != null) {
-                    call.respond(HttpStatusCode.OK, disLikeResult)
+                if (disLikeResult) {
+                    call.respond(HttpStatusCode.OK)
                 } else {
                     call.respond(HttpStatusCode.OK, mapOf("message" to "Roommate liked, no dislikes updated"))
                 }
