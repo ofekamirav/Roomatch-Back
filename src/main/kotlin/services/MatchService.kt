@@ -32,7 +32,7 @@ object MatchService {
         val allProperties = allPropertiesDeferred.await()
         val allRoommates = allRoommatesDeferred.await()
 
-        val dislike = DatabaseManager.getDislikesBySeekerId(seekerId)
+        val dislike = DatabaseManager.getDisLikeBySeekerId(seekerId)
         val dislikedProperties = dislike?.dislikedPropertiesIds ?: emptyList()
         val dislikedRoommates = dislike?.dislikedRoommatesIds ?: emptyList()
 
@@ -77,7 +77,7 @@ object MatchService {
             //Filter out roommates that already live in this ROOM
             val roommatesInProperty = if (property.type == PropertyType.ROOM) property.CurrentRoommatesIds else emptyList()
 
-            val potentialRoommates = allRoommates.filter { roommate ->
+            val potentialRoommates = filteredRoommates.filter { roommate ->
                 roommate.id != seekerId &&
                         (roommate.roommatesNumber == seeker.roommatesNumber) &&
                         !roommatesInProperty.contains(roommate.id) // Exclude existing roommate

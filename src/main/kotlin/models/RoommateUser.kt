@@ -8,7 +8,7 @@ import org.litote.kmongo.Id
 
 @Serializable
 data class RoommateUser(
-    @BsonId @Contextual val id: String = ObjectId().toHexString(), // MongoDB-generated ID
+    @BsonId @Contextual val id: String? = null,
     val email: String,
     val fullName: String,
     val phoneNumber: String,

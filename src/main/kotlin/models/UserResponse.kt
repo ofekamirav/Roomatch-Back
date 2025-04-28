@@ -6,6 +6,6 @@ import kotlinx.serialization.Serializable
 data class UserResponse(
     val token: String,
     val refreshToken: String,
-    val userId: String,
+    val userId: String?,
     val userType: String,
 )

@@ -14,7 +14,7 @@ import org.litote.kmongo.setValue
 object UserService {
 
     //Register a roommate user
-    suspend fun registerRoommate(user: RoommateUser): UserResponse {
+    suspend fun registerRoommate(user: RoommateUser): UserResponse? {
         val existingUser = DatabaseManager.getRoommatesCollection()?.findOne(RoommateUser::email eq user.email)
         if (existingUser != null) {
             throw IllegalArgumentException("User with this email already exists.")
@@ -27,20 +27,24 @@ object UserService {
 
         val newUser = user.copy(password = hashedPassword, refreshToken = refreshToken)
 
-        val insertedUser = DatabaseManager.insertRoommate(newUser)
-            ?: throw IllegalStateException("Failed to create user.")
+        val insertedUser = DatabaseManager.insertRoommate(newUser) // This returns RoommateUser?
 
-        return UserResponse(
-            token = accessToken,
-            refreshToken = refreshToken,
-            userId = insertedUser.id,
-            userType = roommateType
-        )
+        return if (insertedUser != null) {
+            // Insertion successful, create and return UserResponse
+            UserResponse(
+                token = accessToken,
+                refreshToken = refreshToken,
+                userId = insertedUser.id,
+                userType = roommateType
+            )
+        } else {
+            // Insertion failed, return null to indicate failure
+            null
+        }
     }
 
-
     //Register a property owner user
-    suspend fun registerPropertyOwner(user: PropertyOwnerUser):  Result<UserResponse> {
+    suspend fun registerPropertyOwner(user: PropertyOwnerUser):  UserResponse? {
         val existingUser = DatabaseManager.getOwnersCollection()?.findOne(PropertyOwnerUser::email eq user.email)
         if (existingUser != null) {
             throw IllegalArgumentException("User with this email already exists.")
@@ -58,16 +62,16 @@ object UserService {
 
 
         return if (insertedUser != null) {
-            Result.success(
-                UserResponse(
-                    token = accessToken,
-                    refreshToken = refreshToken,
-                    userId = insertedUser.id,
-                    userType = ownerType
-                )
+            // Insertion successful, create and return UserResponse
+            UserResponse(
+                token = accessToken,
+                refreshToken = refreshToken,
+                userId = insertedUser.id,
+                userType = ownerType
             )
         } else {
-            throw IllegalStateException("Failed to create user.")
+            // Insertion failed, return null to indicate failure
+            null
         }
     }
 
@@ -79,21 +83,21 @@ object UserService {
         return DatabaseManager.getRoomateByEmail(email)
     }
 
-    suspend fun login(email: String, password: String): Map<String, Any> {
+    suspend fun login(email: String, password: String): UserResponse {
         val roommate = getRoomateByEmail(email)
         val owner = if (roommate == null) {
             DatabaseManager.getOwnerByEmail(email)
         } else null
 
         if (roommate == null && owner == null) {
-            return mapOf("error" to "User not found.")
+            throw IllegalArgumentException("User is not exists")
         }
 
         val userType = if (roommate != null) "Roommate" else "PropertyOwner"
         val passwordHash = roommate?.password ?: owner?.password!!
 
         if (!Hashing.verifyPassword(password, passwordHash)) {
-            return mapOf("error" to "Invalid password.")
+            throw IllegalArgumentException("Invalid password")
         }
 
         val accessToken = JWTUtils.generateToken(email)
@@ -110,17 +114,15 @@ object UserService {
             }
         }
 
-        return mapOf(
-            "token" to accessToken,
-            "refreshToken" to refreshToken,
-            "userId" to (roommate?.id ?: owner?.id.orEmpty()),
-            "userType" to userType
+        return UserResponse(
+            token = accessToken,
+            refreshToken = refreshToken,
+            userId = if (userType == "Roommate") roommate?.id else owner?.id,
+            userType = userType
         )
     }
 
     //reset a user password
-
-
 
     suspend fun requestPasswordReset(email: String, userType: String): Boolean {
         val resetToken = JWTUtils.generateToken(email)  // Generates JWT token
