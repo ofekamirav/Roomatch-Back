@@ -72,8 +72,12 @@ object DatabaseManager {
     }
 
 
-    suspend fun getRoommateById(id: String): RoommateUser? {
+    suspend fun getRoommateById(id: String?): RoommateUser? {
         return try {
+            if (id == null) {
+                logger.warn("ID is null")
+                return null
+            }
             roommatesCollection?.findOneById(id)
         } catch (e: Exception) {
             logger.error("Error fetching roommate by ID", e)
@@ -99,14 +103,21 @@ object DatabaseManager {
         }
     }
 
-
     suspend fun insertRoommate(user: RoommateUser): RoommateUser? {
         return try {
-            val insertedUser = user.copy(id = ObjectId().toHexString())
-            roommatesCollection?.insertOne(user)
-            insertedUser
+            val generatedId = ObjectId().toHexString()
+            val userWithId = user.copy(id = generatedId)
+
+            val result = roommatesCollection?.insertOne(userWithId)
+
+            if (result?.wasAcknowledged() == true) {
+                userWithId
+            } else {
+                logger.error("Insertion not acknowledged for user: ${user.email}")
+                null
+            }
         } catch (e: Exception) {
-            logger.error("Error in insert user", e)
+            logger.error("Error inserting user ${user.email}", e)
             null
         }
     }
@@ -176,10 +187,19 @@ object DatabaseManager {
 
     suspend fun insertOwner(user: PropertyOwnerUser): PropertyOwnerUser? {
         return try {
-            ownersCollection?.insertOne(user)
-            user
+            val generatedId = ObjectId().toHexString()
+            val userWithId = user.copy(id = generatedId)
+
+            val result = ownersCollection?.insertOne(userWithId)
+
+            if (result?.wasAcknowledged() == true) {
+                userWithId
+            } else {
+                logger.error("Insertion not acknowledged for owner: ${user.email}")
+                null
+            }
         } catch (e: Exception) {
-            logger.error("Error in insert user", e)
+            logger.error("Error inserting owner ${user.email}", e)
             null
         }
     }
@@ -211,7 +231,7 @@ object DatabaseManager {
 
     suspend fun updateOwner(user: PropertyOwnerUser): PropertyOwnerUser? {
         return try {
-            ownersCollection?.updateOneById(user.id, user)
+            ownersCollection?.updateOneById(user.id.toString(), user)
             user
         } catch (e: Exception) {
             logger.error("Error updating owner", e)
@@ -386,7 +406,7 @@ object DatabaseManager {
         }
     }
 
-    suspend fun getDislikeRoommatesIds(seekerId: String): List<String> {
+    suspend fun getDislikeRoommatesIds(seekerId: String): List<String?> {
         return try {
             val disLike = disLikeCollection?.findOne(DisLike::seekerId eq seekerId)
             disLike?.dislikedRoommatesIds ?: emptyList()
@@ -396,7 +416,7 @@ object DatabaseManager {
         }
     }
 
-    suspend fun getDislikePropertiesIds(seekerId: String): List<String> {
+    suspend fun getDislikePropertiesIds(seekerId: String): List<String?> {
         return try {
             val disLike = disLikeCollection?.findOne(DisLike::seekerId eq seekerId)
             disLike?.dislikedPropertiesIds ?: emptyList()
@@ -406,7 +426,7 @@ object DatabaseManager {
         }
     }
 
-    suspend fun updateDislikeRoommates(seekerId: String, dislikedRoommatesIds: List<String>): DisLike? {
+    suspend fun updateDislikeRoommates(seekerId: String, dislikedRoommatesIds: List<String?>): DisLike? {
         return try {
             val disLike = disLikeCollection?.findOne(DisLike::seekerId eq seekerId)
             if (disLike != null) {
@@ -422,7 +442,7 @@ object DatabaseManager {
         }
     }
 
-    suspend fun updateDislikeProperties(seekerId: String, dislikedPropertiesIds: List<String>): DisLike? {
+    suspend fun updateDislikeProperties(seekerId: String, dislikedPropertiesIds: List<String?>): DisLike? {
         return try {
             val disLike = disLikeCollection?.findOne(DisLike::seekerId eq seekerId)
             if (disLike != null) {

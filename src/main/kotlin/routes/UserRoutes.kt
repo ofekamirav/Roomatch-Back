@@ -1,9 +1,6 @@
 package com.routes
 
-import com.models.PropertyOwnerUser
-import com.models.RoommateUser
-import com.models.BioRequest
-import com.models.BioResponse
+import com.models.*
 import com.services.GeminiService
 import com.services.UserService
 import io.ktor.http.*
@@ -12,8 +9,6 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
 
-@Serializable
-data class UserResponse(val token: String?, val refreshToken: String?, val userId: String?, val userType: String?)
 
 fun Routing.configureUserRoutes() {
 
@@ -22,6 +17,7 @@ fun Routing.configureUserRoutes() {
     }
     route("/roommates") {
         // Register a roommate user
+        // In com.routes.configureUserRoutes
         post("/register") {
             try {
                 val user = call.receive<RoommateUser>()
@@ -29,12 +25,23 @@ fun Routing.configureUserRoutes() {
 
                 val userResponse = UserService.registerRoommate(user)
 
-                call.respond(userResponse)
+                if (userResponse != null) {
+                    // Success! Respond with 201 Created and the UserResponse object
+                    call.respond(HttpStatusCode.Created, userResponse)
+                } else {
+                    println("Error: Failed to insert roommate ${user.email} into database.")
+                    call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to create user account."))
+                }
 
             } catch (e: IllegalArgumentException) {
                 call.respond(HttpStatusCode.BadRequest, mapOf("error" to e.message))
-            } catch (e: Exception) {
-                call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "Internal server error")))
+            } catch (e: io.ktor.serialization.JsonConvertException) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid request format: ${e.message}"))
+            }
+            catch (e: Exception) {
+                println("Unexpected error during roommate registration: ${e.message}")
+                e.printStackTrace() // Log stack trace for debugging
+                call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "An internal server error occurred")))
             }
         }
 
@@ -76,35 +83,45 @@ fun Routing.configureUserRoutes() {
 
                 val userResponse = UserService.registerPropertyOwner(user)
 
-                call.respond(userResponse)
+                if (userResponse != null) {
+                    // Success! Respond with 201 Created and the UserResponse object
+                    call.respond(HttpStatusCode.Created, userResponse)
+                } else {
+                    println("Error: Failed to insert roommate ${user.email} into database.")
+                    call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to create user account."))
+                }
 
             } catch (e: IllegalArgumentException) {
                 call.respond(HttpStatusCode.BadRequest, mapOf("error" to e.message))
-            } catch (e: Exception) {
-                call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "Internal server error")))
+            } catch (e: io.ktor.serialization.JsonConvertException) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid request format: ${e.message}"))
+            }
+            catch (e: Exception) {
+                println("Unexpected error during roommate registration: ${e.message}")
+                e.printStackTrace() // Log stack trace for debugging
+                call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "An internal server error occurred")))
             }
         }
     }
 
-    route("/login"){
+    route("/login") {
         post {
             try {
-                val request = call.receive<Map<String, String>>()
-                val email = request["email"] ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Email is required"))
-                val password = request["password"] ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Password is required"))
+                val request = call.receive<LoginRequest>()
+                val email = request.email
+                val password = request.password
 
-                val result = UserService.login(email, password)
-                if (result["error"] != null) {
-                    call.respond(HttpStatusCode.Unauthorized, mapOf("error" to result["error"]))
-                } else {
-                    val response = UserResponse(result["token"].toString(),result["refreshToken"].toString() ,result["userId"].toString(), result["userType"].toString())
-                    call.respond(HttpStatusCode.OK, response)
-                }
+                val userResponse = UserService.login(email, password)
+                call.respond(HttpStatusCode.OK, userResponse)
+
+            } catch (e: IllegalArgumentException) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to (e.message ?: "Bad Request")))
             } catch (e: Exception) {
                 call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "Internal server error")))
             }
         }
     }
+
 
     route("/auth") {
 
