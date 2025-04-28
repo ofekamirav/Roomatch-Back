@@ -6,10 +6,10 @@ import com.database.DatabaseManager
 
 object PropertyController {
 
-    suspend fun uploadProperty(ownerId: String, property: Property): Map<String, Any> {
+    suspend fun uploadProperty(ownerId: String, property: Property): Property {
         val existingOwner = DatabaseManager.getOwnerById(ownerId)
         if (existingOwner == null) {
-            return mapOf("error" to "Owner does not exist.")
+            throw IllegalArgumentException("Owner with this ID does not exist.")
         }
 
         val propertyWithOwner = property.copy(ownerId = ownerId)
@@ -17,12 +17,12 @@ object PropertyController {
         val insertedProperty = DatabaseManager.insertProperty(propertyWithOwner)
 
         return if (insertedProperty != null) {
-            mapOf(
-                "propertyId" to insertedProperty.id,
-                "message" to "Property successfully added."
-            )
+            // Insertion successful, return the inserted property
+            insertedProperty
         } else {
-            mapOf("error" to "Failed to create property.")
+            // Insertion failed, throw an exception or handle it as needed
+            throw IllegalStateException("Failed to insert property into database.")
+
         }
     }
 
