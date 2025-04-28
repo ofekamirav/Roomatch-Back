@@ -61,6 +61,7 @@ object MatchService {
                     property.CurrentRoommatesIds.size < property.canContainRoommates!! &&
                             (property.pricePerMonth == null || property.pricePerMonth in seeker.minPrice..seeker.maxPrice) &&
                             (property.size == null || property.size in seeker.minPropertySize..seeker.maxPropertySize)
+
                 PropertyType.APARTMENT ->
                     property.CurrentRoommatesIds.isEmpty() &&
                             (property.pricePerMonth == null || property.pricePerMonth in seeker.minPrice..seeker.maxPrice) &&
@@ -75,7 +76,8 @@ object MatchService {
         for (property in potentialProperties) {
 
             //Filter out roommates that already live in this ROOM
-            val roommatesInProperty = if (property.type == PropertyType.ROOM) property.CurrentRoommatesIds else emptyList()
+            val roommatesInProperty =
+                if (property.type == PropertyType.ROOM) property.CurrentRoommatesIds else emptyList()
 
             val potentialRoommates = filteredRoommates.filter { roommate ->
                 roommate.id != seekerId &&
@@ -98,8 +100,8 @@ object MatchService {
 
             //if(combineRoommates.size<seeker.roommatesNumber) continue
 
-
-            val match = Match(
+            if (property.id != null) {
+                val match = Match(
                     seekerId = seekerId,
                     propertyId = property.id,
                     roommateMatches = combineRoommates,
@@ -107,6 +109,8 @@ object MatchService {
                 )
                 matches.add(match)
             }
+        }
+
 
         userMatchCache[seekerId] = matches
         logger.info("performMatch: matches.size = ${matches.size}")

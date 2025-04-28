@@ -21,10 +21,12 @@ fun Routing.configurePropertyRoutes() {
                 val property = call.receive<Property>()
                 val result = PropertyController.uploadProperty(ownerId, property)
 
-                if (result["error"] != null) {
-                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to result["error"]))
-                } else {
+                if (result != null) {
+                    // Success! Respond with 201 Created and the UserResponse object
                     call.respond(HttpStatusCode.Created, result)
+                } else {
+                    println("Error: Failed to insert property into database.")
+                    call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to create property."))
                 }
             } catch (e: Exception) {
                 call.respond(

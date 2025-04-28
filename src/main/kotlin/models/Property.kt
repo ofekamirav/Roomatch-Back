@@ -7,7 +7,7 @@ import org.bson.types.ObjectId
 
 @Serializable
 data class Property(
-    @BsonId @Contextual val id: String = ObjectId().toHexString(), // MongoDB-generated ID
+    @BsonId @Contextual val id: String? = null,
     val ownerId: String?=null,
     val available: Boolean?=null,
     val type: PropertyType,
