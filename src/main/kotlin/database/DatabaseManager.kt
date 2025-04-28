@@ -327,8 +327,17 @@ object DatabaseManager {
 
     suspend fun insertProperty(property: Property): Property? {
         return try {
-            propertiesCollection?.insertOne(property)
-            property
+            val generatedId = ObjectId().toHexString()
+            val propertywithid = property.copy(id = generatedId)
+
+            val result = propertiesCollection?.insertOne(propertywithid)
+
+            if (result?.wasAcknowledged() == true) {
+                propertywithid
+            } else {
+                logger.error("Insertion not acknowledged for property: ${propertywithid.title}")
+                null
+            }
         } catch (e: Exception) {
             logger.error("Error inserting property", e)
             null
@@ -357,8 +366,15 @@ object DatabaseManager {
 
     suspend fun insertMatch(match: Match): Match? {
         return try {
-            matchesCollection?.insertOne(match)
-            match
+            val generatedId = ObjectId().toHexString()
+            val matchWithId = match.copy(id = generatedId)
+            val result = matchesCollection?.insertOne(matchWithId)
+            if (result?.wasAcknowledged() == true) {
+                matchWithId
+            } else {
+                logger.error("Insertion not acknowledged for match: ${matchWithId.id}")
+                null
+            }
         } catch (e: Exception) {
             logger.error("Error inserting match", e)
             null
@@ -389,8 +405,15 @@ object DatabaseManager {
 
     suspend fun insertDisLike(dislike: DisLike): DisLike? {
         return try {
-            disLikeCollection?.insertOne(dislike)
-            dislike
+            val generatedId = ObjectId().toHexString()
+            val dislikeWithId = dislike.copy(id = generatedId)
+            val result = disLikeCollection?.insertOne(dislikeWithId)
+            if (result?.wasAcknowledged() == true) {
+                dislikeWithId
+            } else {
+                logger.error("Insertion not acknowledged for dislike: ${dislikeWithId.seekerId}")
+                null
+            }
         } catch (e: Exception) {
             logger.error("Error inserting dislike", e)
             null
@@ -431,7 +454,7 @@ object DatabaseManager {
             val disLike = disLikeCollection?.findOne(DisLike::seekerId eq seekerId)
             if (disLike != null) {
                 disLike.dislikedRoommatesIds = dislikedRoommatesIds
-                disLikeCollection?.updateOneById(disLike.id, disLike)
+                disLikeCollection?.updateOneById(disLike.id!!, disLike)
                 disLike
             } else {
                 null
@@ -447,7 +470,7 @@ object DatabaseManager {
             val disLike = disLikeCollection?.findOne(DisLike::seekerId eq seekerId)
             if (disLike != null) {
                 disLike.dislikedPropertiesIds = dislikedPropertiesIds
-                disLikeCollection?.updateOneById(disLike.id, disLike)
+                disLikeCollection?.updateOneById(disLike.id!!, disLike)
                 disLike
             } else {
                 null

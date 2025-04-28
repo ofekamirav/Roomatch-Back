@@ -23,7 +23,7 @@ object LikeController {
     }
 
     //Like Property--dislike the roomies
-    suspend fun likeProperty(match: Match): DisLike? {
+    suspend fun likeProperty(match: Match): Boolean {
         val dislikeRoomiesFromMatch = mutableListOf<RoommateUser>()
 
         match.roommateMatches.forEach { roommateMatch ->
@@ -39,33 +39,33 @@ object LikeController {
             val updatedDislike = DatabaseManager.updateDislikeRoommates(match.seekerId, newDislikeRoommies)
             if (updatedDislike != null) {
                 logger.info("Dislike roomies updated successfully: ${match.seekerId}")
-                return updatedDislike
+                return true
             } else {
                 val errorMsg = "Failed to update dislike roomies"
                 logger.error(errorMsg)
             }
         }
-        return null
+        return false
     }
 
     //Like Roommate--dislike the properties
-    suspend fun likeRoommate(match: Match): DisLike? {
+    suspend fun likeRoommate(match: Match): Boolean {
         try {
             val currentDislikeProperties = DatabaseManager.getDislikePropertiesIds(match.seekerId)
             val newDislikeProperties = currentDislikeProperties + match.propertyId
             val updatedDislike = DatabaseManager.updateDislikeProperties(match.seekerId, newDislikeProperties)
             if (updatedDislike != null) {
                 logger.info("Dislike properties updated successfully: ${match.seekerId}")
-                return updatedDislike
+                return true
             } else {
                 val errorMsg = "Failed to update dislike properties"
                 logger.error(errorMsg)
+                return false
             }
         } catch (e: Exception) {
             logger.error("Error while updating dislike properties: ${e.message}")
             throw e
         }
-        return null
     }
 
 

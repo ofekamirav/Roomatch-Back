@@ -7,7 +7,7 @@ import org.bson.types.ObjectId
 
 @Serializable
 data class Match(
-    @BsonId @Contextual val id: String = ObjectId().toHexString(), // MongoDB-generated ID
+    @BsonId @Contextual val id: String? = null,
     val seekerId: String,
     val propertyId: String,
     val roommateMatches: List<RoommateMatch> = emptyList(),
