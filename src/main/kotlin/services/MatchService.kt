@@ -32,6 +32,10 @@ object MatchService {
         val allProperties = allPropertiesDeferred.await()
         val allRoommates = allRoommatesDeferred.await()
 
+        val dislike = DatabaseManager.getDislikesBySeekerId(seekerId)
+        val dislikedProperties = dislike?.dislikedPropertiesIds ?: emptyList()
+        val dislikedRoommates = dislike?.dislikedRoommatesIds ?: emptyList()
+
         val locationProperties = allProperties.filter { property ->
             val propLat = property.latitude
             val propLon = property.longitude
@@ -39,11 +43,19 @@ object MatchService {
                 haversine(seeker.latitude, seeker.longitude, propLat, propLon) <= seeker.preferredRadiusKm
             } else false
         }
-
         logger.info("Preferred location properties count: ${locationProperties.size}")
 
-        // Filter available properties based on available slots and seeker preferences
-        val potentialProperties = locationProperties.filter { property ->
+        // Filter out disliked properties
+        val filteredProperties = locationProperties.filter { property ->
+            !dislikedProperties.contains(property.id)
+        }
+
+        // Filter out disliked roommates
+        val filteredRoommates = allRoommates.filter { roommate ->
+            !dislikedRoommates.contains(roommate.id)
+        }
+
+        val potentialProperties = filteredProperties.filter { property ->
             when (property.type) {
                 PropertyType.ROOM ->
                     property.CurrentRoommatesIds.size < property.canContainRoommates!! &&
@@ -55,6 +67,7 @@ object MatchService {
                             (property.size == null || property.size in seeker.minPropertySize..seeker.maxPropertySize)
             }
         }
+
         logger.info("Potential properties count: ${potentialProperties.size}")
 
         val matches: MutableList<Match> = mutableListOf()
