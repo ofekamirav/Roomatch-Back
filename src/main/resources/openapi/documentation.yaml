@@ -381,6 +381,38 @@ paths:
             description: Internal server error
 
 
+  /dislike/swipe-left:
+    post:
+      tags:
+        - Dislikes
+      summary: Swipe left (dislike property and roommates)
+      description: Saves both the property and roommates from the given match into the seeker's Dislike record.
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Match'
+      responses:
+        '201':
+          description: Match disliked successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Match disliked successfully.
+        '400':
+          description: Invalid match object
+        '500':
+          description: Internal server error
+
+
+
   /auth/request-password-reset:
     post:
       tags:

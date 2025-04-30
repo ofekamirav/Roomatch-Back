@@ -18,6 +18,7 @@ fun Application.configureRouting() {
             configurePropertyRoutes()
             configureMatchRoutes()
             configureLikeRoutes()
+            configureDislikeRoutes()
         }
 
     }
