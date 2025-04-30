@@ -29,4 +29,8 @@ object PropertyController {
     suspend fun getPropertiesByOwnerId(ownerId: String): List<Property> {
         return DatabaseManager.getPropertiesByOwnerId(ownerId)
     }
+
+    suspend fun getPropertyById(propertyId: String): Property? {
+        return DatabaseManager.getPropertyById(propertyId)
+    }
 }

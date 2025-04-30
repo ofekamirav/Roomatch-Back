@@ -8,7 +8,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 fun Route.configureDislikeRoutes() {
-    post("/dislike/swipe-left") {
+    post("/dislike") {
         val match = call.receive<Match>()
         val success = DislikeController.swipeLeft(match)
 
