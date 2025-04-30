@@ -438,5 +438,38 @@ object DatabaseManager {
         }
     }
 
+    // Get dislike record for a seeker
+    suspend fun getDislikeBySeekerId(seekerId: String): DisLike? {
+        return try {
+            disLikeCollection?.findOne(DisLike::seekerId eq seekerId)
+        } catch (e: Exception) {
+            logger.error("Error getting DisLike by seekerId", e)
+            null
+        }
+    }
+
+    // Insert a new dislike record
+    suspend fun insertDislike(dislike: DisLike): Boolean {
+        return try {
+            disLikeCollection?.insertOne(dislike)
+            true
+        } catch (e: Exception) {
+            logger.error("Error inserting new DisLike", e)
+            false
+        }
+    }
+
+    // Update an existing dislike record
+    suspend fun updateDislike(dislike: DisLike): Boolean {
+        return try {
+            disLikeCollection?.replaceOne(DisLike::seekerId eq dislike.seekerId, dislike)
+            true
+        } catch (e: Exception) {
+            logger.error("Error updating DisLike", e)
+            false
+        }
+    }
+
+
 
 }
