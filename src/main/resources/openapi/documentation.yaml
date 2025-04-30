@@ -381,7 +381,7 @@ paths:
             description: Internal server error
 
 
-  /dislike/swipe-left:
+  /dislike:
     post:
       tags:
         - Dislikes

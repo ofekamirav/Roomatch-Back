@@ -54,6 +54,32 @@ fun Routing.configurePropertyRoutes() {
                 )
             }
         }
+
+        //Get Property by ID
+        get("/{propertyId}"){
+            try {
+                val propertyId = call.parameters["propertyId"]
+                if (propertyId == null) {
+                    call.respondText("Property Id is required", status = HttpStatusCode.BadRequest)
+                    return@get
+                }
+                val property = PropertyController.getPropertyById(propertyId)
+
+                if (property != null) {
+                    call.respond(HttpStatusCode.OK, property)
+                } else {
+                    call.respond(HttpStatusCode.NotFound, mapOf("error" to "Property not found"))
+                }
+            } catch (e: Exception) {
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    mapOf("error" to (e.message ?: "Internal server error"))
+                )
+            }
+
+        }
+
+
     }
 
 }
