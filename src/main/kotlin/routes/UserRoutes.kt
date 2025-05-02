@@ -17,7 +17,6 @@ fun Routing.configureUserRoutes() {
     }
     route("/roommates") {
         // Register a roommate user
-        // In com.routes.configureUserRoutes
         post("/register") {
             try {
                 val user = call.receive<RoommateUser>()
@@ -72,6 +71,20 @@ fun Routing.configureUserRoutes() {
                 call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "Failed to generate bio")))
             }
         }
+
+        //Get all roommates
+        get(""){
+            try {
+                val roommates = UserService.getAllRoommates()
+                if (roommates.isNotEmpty()) {
+                    call.respond(HttpStatusCode.OK, roommates)
+                } else {
+                    call.respond(HttpStatusCode.NoContent, mapOf("message" to "No roommates found"))
+                }
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "Failed to fetch roommates")))
+            }
+        }
     }
 
     route("/owners") {
@@ -102,6 +115,22 @@ fun Routing.configureUserRoutes() {
                 call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "An internal server error occurred")))
             }
         }
+
+        // Get property owner by ID
+        get("/{id}") {
+            val id = call.parameters["id"]
+            if (id == null) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "ID is required"))
+                return@get
+            }
+
+            val user = UserService.getOwnerById(id)
+            if (user != null) {
+                call.respond(HttpStatusCode.OK, user)
+            } else {
+                call.respond(HttpStatusCode.NotFound, mapOf("error" to "User not found"))
+            }
+        }
     }
 
     route("/login") {
@@ -121,46 +150,5 @@ fun Routing.configureUserRoutes() {
             }
         }
     }
-
-
-    route("/auth") {
-
-        // Request Password Reset
-        post("/request-password-reset") {
-            try {
-                val request = call.receive<PasswordResetRequest>()
-                val success = UserService.requestPasswordReset(request.email, request.userType)
-
-                if (success) {
-                    call.respond(HttpStatusCode.OK, mapOf("message" to "Password reset token generated successfully."))
-                } else {
-                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Unable to generate reset token. Check email or user type."))
-                }
-            } catch (e: Exception) {
-                call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "Internal server error")))
-            }
-        }
-
-        // Reset Password
-        post("/reset-password") {
-            try {
-                val request = call.receive<ResetPassword>()
-                val success = UserService.resetPassword(request.token, request.newPassword, request.userType)
-
-                if (success) {
-                    call.respond(HttpStatusCode.OK, mapOf("message" to "Password reset successfully."))
-                } else {
-                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid or expired token."))
-                }
-            } catch (e: Exception) {
-                call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "Internal server error")))
-            }
-        }
-    }
 }
 
-@Serializable
-data class PasswordResetRequest(val email: String, val userType: String)
-
-@Serializable
-data class ResetPassword(val token: String, val newPassword: String, val userType: String)
