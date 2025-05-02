@@ -83,6 +83,10 @@ object UserService {
         return DatabaseManager.getRoomateByEmail(email)
     }
 
+    suspend fun getOwnerById(id: String): PropertyOwnerUser? {
+        return DatabaseManager.getOwnerById(id)
+    }
+
     suspend fun login(email: String, password: String): UserResponse {
         val roommate = getRoomateByEmail(email)
         val owner = if (roommate == null) {
@@ -156,5 +160,8 @@ object UserService {
         }
     }
 
+    suspend fun getAllRoommates(): List<RoommateUser> {
+        return DatabaseManager.getAllRoommates()
+    }
 
 }

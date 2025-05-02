@@ -5,9 +5,10 @@ import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import org.litote.kmongo.eq
 import com.database.DatabaseManager
-import com.models.RoommateUser
+import com.models.PasswordResetRequest
+import com.models.ResetPassword
+import com.services.UserService
 
 fun Routing.configureAuthRoutes() {
 
@@ -55,6 +56,38 @@ fun Routing.configureAuthRoutes() {
                     HttpStatusCode.InternalServerError,
                     mapOf("error" to (e.message ?: "Internal error"))
                 )
+            }
+        }
+
+        // Request Password Reset
+        post("/request-password-reset") {
+            try {
+                val request = call.receive<PasswordResetRequest>()
+                val success = UserService.requestPasswordReset(request.email, request.userType)
+
+                if (success) {
+                    call.respond(HttpStatusCode.OK, mapOf("message" to "Password reset token generated successfully."))
+                } else {
+                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Unable to generate reset token. Check email or user type."))
+                }
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "Internal server error")))
+            }
+        }
+
+        // Reset Password
+        post("/reset-password") {
+            try {
+                val request = call.receive<ResetPassword>()
+                val success = UserService.resetPassword(request.token, request.newPassword, request.userType)
+
+                if (success) {
+                    call.respond(HttpStatusCode.OK, mapOf("message" to "Password reset successfully."))
+                } else {
+                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid or expired token."))
+                }
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "Internal server error")))
             }
         }
     }

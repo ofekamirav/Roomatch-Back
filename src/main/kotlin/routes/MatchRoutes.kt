@@ -25,6 +25,5 @@ fun Route.configureMatchRoutes() {
                 call.respond(HttpStatusCode.NoContent, mapOf("message" to "No more matches"))
             }
         }
-
     }
 }
