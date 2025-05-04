@@ -20,6 +20,8 @@ repositories {
 }
 
 dependencies {
+    implementation("com.google.api-client:google-api-client:2.2.0")
+    implementation("com.google.http-client:google-http-client-jackson2:1.43.3")
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.serialization)
@@ -29,7 +31,6 @@ dependencies {
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.content.negotiation)
     implementation(libs.ktor.server.swagger)
-    implementation(libs.ktor.server.swagger)
     implementation(libs.ktor.server.netty)
     implementation(libs.ktor.server.auth)
     implementation(libs.ktor.server.auth.jwt)
@@ -38,7 +39,6 @@ dependencies {
     implementation(libs.java.jwt)
     implementation(libs.kmongo.coroutine)
     implementation(libs.logback.classic)
-    implementation(libs.dotenv.kotlin)
     implementation(libs.ktor.server.config.yaml)
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.kotlin.test.junit)

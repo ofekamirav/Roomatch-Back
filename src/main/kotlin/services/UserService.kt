@@ -1,17 +1,23 @@
+
 package com.services
 
 import com.database.DatabaseManager
 import com.models.*
 import com.utils.Hashing
 import com.utils.JWTUtils
-import org.litote.kmongo.Data
-import org.litote.kmongo.MongoOperator
 import org.litote.kmongo.eq
 import org.litote.kmongo.setValue
-
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier
+import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport
+import com.google.api.client.json.gson.GsonFactory
+import com.exceptions.IncompleteRegistrationException
 
 
 object UserService {
+
+    private val jsonFactory = GsonFactory.getDefaultInstance()
+    private val httpTransport = GoogleNetHttpTransport.newTrustedTransport()
 
     //Register a roommate user
     suspend fun registerRoommate(user: RoommateUser): UserResponse? {
@@ -27,30 +33,24 @@ object UserService {
 
         val newUser = user.copy(password = hashedPassword, refreshToken = refreshToken)
 
-        val insertedUser = DatabaseManager.insertRoommate(newUser) // This returns RoommateUser?
+        val insertedUser = DatabaseManager.insertRoommate(newUser)
 
         return if (insertedUser != null) {
-            // Insertion successful, create and return UserResponse
             UserResponse(
                 token = accessToken,
                 refreshToken = refreshToken,
                 userId = insertedUser.id,
                 userType = roommateType
             )
-        } else {
-            // Insertion failed, return null to indicate failure
-            null
-        }
+        } else null
     }
 
-    //Register a property owner user
-    suspend fun registerPropertyOwner(user: PropertyOwnerUser):  UserResponse? {
+    suspend fun registerPropertyOwner(user: PropertyOwnerUser): UserResponse? {
         val existingUser = DatabaseManager.getOwnersCollection()?.findOne(PropertyOwnerUser::email eq user.email)
         if (existingUser != null) {
             throw IllegalArgumentException("User with this email already exists.")
         }
 
-        // Hashing password
         val hashedPassword = Hashing.hashPassword(user.password)
         val accessToken = JWTUtils.generateToken(user.email)
         val refreshToken = JWTUtils.generateRefreshToken(user.email)
@@ -60,38 +60,19 @@ object UserService {
 
         val insertedUser = DatabaseManager.insertOwner(newUser)
 
-
         return if (insertedUser != null) {
-            // Insertion successful, create and return UserResponse
             UserResponse(
                 token = accessToken,
                 refreshToken = refreshToken,
                 userId = insertedUser.id,
                 userType = ownerType
             )
-        } else {
-            // Insertion failed, return null to indicate failure
-            null
-        }
-    }
-
-    suspend fun getRoommateById(id: String): RoommateUser? {
-        return DatabaseManager.getRoommateById(id)
-    }
-
-    suspend fun getRoomateByEmail(email: String): RoommateUser? {
-        return DatabaseManager.getRoomateByEmail(email)
-    }
-
-    suspend fun getOwnerById(id: String): PropertyOwnerUser? {
-        return DatabaseManager.getOwnerById(id)
+        } else null
     }
 
     suspend fun login(email: String, password: String): UserResponse {
         val roommate = getRoomateByEmail(email)
-        val owner = if (roommate == null) {
-            DatabaseManager.getOwnerByEmail(email)
-        } else null
+        val owner = if (roommate == null) DatabaseManager.getOwnerByEmail(email) else null
 
         if (roommate == null && owner == null) {
             throw IllegalArgumentException("User is not exists")
@@ -121,16 +102,14 @@ object UserService {
         return UserResponse(
             token = accessToken,
             refreshToken = refreshToken,
-            userId = if (userType == "Roommate") roommate?.id else owner?.id,
+            userId = roommate?.id ?: owner?.id,
             userType = userType
         )
     }
 
-    //reset a user password
-
     suspend fun requestPasswordReset(email: String, userType: String): Boolean {
-        val resetToken = JWTUtils.generateToken(email)  // Generates JWT token
-        val expiration = System.currentTimeMillis() + 3600000  // 1 hour validity
+        val resetToken = JWTUtils.generateToken(email)
+        val expiration = System.currentTimeMillis() + 3600000
 
         return when (userType) {
             "Roommate" -> DatabaseManager.setRoommateResetToken(email, resetToken, expiration)
@@ -138,7 +117,6 @@ object UserService {
             else -> false
         }
     }
-
 
     suspend fun resetPassword(token: String, newPassword: String, userType: String): Boolean {
         val hashedPassword = Hashing.hashPassword(newPassword)
@@ -160,8 +138,71 @@ object UserService {
         }
     }
 
+    suspend fun getRoommateById(id: String): RoommateUser? {
+        return DatabaseManager.getRoommateById(id)
+    }
+
+    suspend fun getRoomateByEmail(email: String): RoommateUser? {
+        return DatabaseManager.getRoomateByEmail(email)
+    }
+
+    suspend fun getOwnerById(id: String): PropertyOwnerUser? {
+        return DatabaseManager.getOwnerById(id)
+    }
+
     suspend fun getAllRoommates(): List<RoommateUser> {
         return DatabaseManager.getAllRoommates()
     }
 
+    suspend fun handleGoogleSignIn(idTokenString: String): UserResponse {
+        val verifier = GoogleIdTokenVerifier.Builder(httpTransport, jsonFactory)
+            .setAudience(listOf("941016882704-a75hubtir8eji6pm4fjrl0ir5aavvajg.apps.googleusercontent.com"))
+            .build()
+
+        val idToken: GoogleIdToken? = verifier.verify(idTokenString)
+
+        if (idToken != null) {
+            val payload = idToken.payload
+            val email = payload.email
+            val fullName = payload["name"] as String
+            val picture = payload["picture"] as? String
+
+            // Check if already exists as roommate
+            val roommateUser = DatabaseManager.getRoomateByEmail(email)
+            if (roommateUser != null) {
+                val accessToken = JWTUtils.generateToken(email)
+                val refreshToken = JWTUtils.generateRefreshToken(email)
+
+                return UserResponse(
+                    token = accessToken,
+                    refreshToken = refreshToken,
+                    userId = roommateUser.id,
+                    userType = "Roommate"
+                )
+            }
+
+            // Check if already exists as property owner
+            val ownerUser = DatabaseManager.getOwnerByEmail(email)
+            if (ownerUser != null) {
+                val accessToken = JWTUtils.generateToken(email)
+                val refreshToken = JWTUtils.generateRefreshToken(email)
+
+                return UserResponse(
+                    token = accessToken,
+                    refreshToken = refreshToken,
+                    userId = ownerUser.id,
+                    userType = "PropertyOwner"
+                )
+            }
+
+            // If user does not exist — return partial info to allow full registration
+            throw IncompleteRegistrationException(
+                email = email,
+                fullName = fullName,
+                profilePicture = picture
+            )
+        } else {
+            throw IllegalArgumentException("Invalid ID token.")
+        }
+    }
 }
