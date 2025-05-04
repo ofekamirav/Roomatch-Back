@@ -7,7 +7,9 @@ import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import com.exceptions.IncompleteRegistrationException
 import kotlinx.serialization.Serializable
+import sun.util.logging.resources.logging
 
 
 fun Routing.configureUserRoutes() {
@@ -36,11 +38,13 @@ fun Routing.configureUserRoutes() {
                 call.respond(HttpStatusCode.BadRequest, mapOf("error" to e.message))
             } catch (e: io.ktor.serialization.JsonConvertException) {
                 call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid request format: ${e.message}"))
-            }
-            catch (e: Exception) {
+            } catch (e: Exception) {
                 println("Unexpected error during roommate registration: ${e.message}")
                 e.printStackTrace() // Log stack trace for debugging
-                call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "An internal server error occurred")))
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    mapOf("error" to (e.message ?: "An internal server error occurred"))
+                )
             }
         }
 
@@ -68,12 +72,15 @@ fun Routing.configureUserRoutes() {
                 val generatedBio = GeminiService.generateBio(request)
                 call.respond(BioResponse(generatedBio))
             } catch (e: Exception) {
-                call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "Failed to generate bio")))
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    mapOf("error" to (e.message ?: "Failed to generate bio"))
+                )
             }
         }
 
         //Get all roommates
-        get(""){
+        get("") {
             try {
                 val roommates = UserService.getAllRoommates()
                 if (roommates.isNotEmpty()) {
@@ -82,7 +89,10 @@ fun Routing.configureUserRoutes() {
                     call.respond(HttpStatusCode.NoContent, mapOf("message" to "No roommates found"))
                 }
             } catch (e: Exception) {
-                call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "Failed to fetch roommates")))
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    mapOf("error" to (e.message ?: "Failed to fetch roommates"))
+                )
             }
         }
     }
@@ -108,11 +118,13 @@ fun Routing.configureUserRoutes() {
                 call.respond(HttpStatusCode.BadRequest, mapOf("error" to e.message))
             } catch (e: io.ktor.serialization.JsonConvertException) {
                 call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid request format: ${e.message}"))
-            }
-            catch (e: Exception) {
+            } catch (e: Exception) {
                 println("Unexpected error during roommate registration: ${e.message}")
                 e.printStackTrace() // Log stack trace for debugging
-                call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "An internal server error occurred")))
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    mapOf("error" to (e.message ?: "An internal server error occurred"))
+                )
             }
         }
 
@@ -146,9 +158,44 @@ fun Routing.configureUserRoutes() {
             } catch (e: IllegalArgumentException) {
                 call.respond(HttpStatusCode.BadRequest, mapOf("error" to (e.message ?: "Bad Request")))
             } catch (e: Exception) {
-                call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "Internal server error")))
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    mapOf("error" to (e.message ?: "Internal server error"))
+                )
+            }
+        }
+
+        post("/oauth/google") {
+            try {
+                println("Received login request from Google")
+                val tokenRequest = call.receive<Map<String, String>>()
+                val idToken = tokenRequest["idToken"]
+                    ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing idToken"))
+
+                val userResponse = UserService.handleGoogleSignIn(idToken)
+                call.respond(HttpStatusCode.OK, userResponse)
+
+            } catch (e: IncompleteRegistrationException) {
+                call.respond(
+                    HttpStatusCode.Accepted, mapOf(
+                        "message" to "User needs to complete registration",
+                        "email" to e.email,
+                        "fullName" to e.fullName,
+                        "profilePicture" to e.profilePicture
+                    )
+                )
+
+            } catch (e: IllegalArgumentException) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to (e.message ?: "Bad request")))
+
+            } catch (e: Exception) {
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    mapOf("error" to (e.message ?: "Internal server error"))
+                )
             }
         }
     }
 }
+
 
