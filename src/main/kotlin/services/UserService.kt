@@ -156,10 +156,14 @@ object UserService {
 
     suspend fun handleGoogleSignIn(idTokenString: String): UserResponse {
         val verifier = GoogleIdTokenVerifier.Builder(httpTransport, jsonFactory)
-            .setAudience(listOf("941016882704-a75hubtir8eji6pm4fjrl0ir5aavvajg.apps.googleusercontent.com"))
+            .setAudience(listOf(
+                "366891104441-92er57f3s7l2fr55abu7822uea1u5t03.apps.googleusercontent.com", // Web Client ID
+                "366891104441-vcv1o33mkv628rggcfetj4ekipc0thmi.apps.googleusercontent.com"  // Android Client ID
+            ))
             .build()
 
         val idToken: GoogleIdToken? = verifier.verify(idTokenString)
+        println("handleGoogleSignIn-ID Token: $idToken")
 
         if (idToken != null) {
             val payload = idToken.payload

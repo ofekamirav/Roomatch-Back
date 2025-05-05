@@ -20,8 +20,8 @@ repositories {
 }
 
 dependencies {
-    implementation("com.google.api-client:google-api-client:2.2.0")
-    implementation("com.google.http-client:google-http-client-jackson2:1.43.3")
+    implementation(libs.google.api.client)
+    implementation(libs.google.http.client)
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.serialization)

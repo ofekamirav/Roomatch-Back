@@ -8,6 +8,8 @@ auth0 = "4.4.0"
 kmongo = "4.10.0"
 mindrot = "0.4"
 dotenv = "6.4.1"
+google-api-client = "2.2.0"
+google-http-client = "1.43.3"
 
 [libraries]
 ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor-version" }
@@ -30,6 +32,8 @@ ktor-client-serialization = { module = "io.ktor:ktor-client-serialization", vers
 ktor-client-json = { module = "io.ktor:ktor-client-json", version.ref = "ktor-version" }
 ktor-server-auth = { module = "io.ktor:ktor-server-auth", version.ref = "ktor-auth" }
 ktor-server-auth-jwt = { module = "io.ktor:ktor-server-auth-jwt", version.ref = "ktor-auth" }
+google-api-client={module = "com.google.api-client:google-api-client", version.ref = "google-api-client" }
+google-http-client = { module = "com.google.http-client:google-http-client-jackson2", version.ref = "google-http-client" }
 
 
 
