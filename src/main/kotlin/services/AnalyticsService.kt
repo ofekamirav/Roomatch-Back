@@ -7,9 +7,12 @@ import com.models.PropertyMatchAnalytics
 object AnalyticsService {
 
     // Function to get analytics data for owner
-    suspend fun getAnalyticsData(ownerId: String): AnalyticsResponse {
+    suspend fun getAnalyticsData(ownerId: String): AnalyticsResponse? {
         // Get Owner's properties
         val properties = DatabaseManager.getPropertiesByOwnerId(ownerId)
+        if (properties.isEmpty()) {
+            return null
+        }
         val matchesPerProperty = mutableListOf<PropertyMatchAnalytics>()
         var totalMatches = 0
         var totalScore = 0.0

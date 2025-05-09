@@ -154,6 +154,10 @@ fun Routing.configureUserRoutes() {
             }
             try {
                 val analyticsResponse = AnalyticsService.getAnalyticsData(id)
+                if(analyticsResponse == null) {
+                    call.respond(HttpStatusCode.NoContent, mapOf("message" to "No analytics data found"))
+                    return@get
+                }
                 call.respond(HttpStatusCode.OK, analyticsResponse)
             } catch (e: Exception) {
                 call.respond(
