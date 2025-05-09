@@ -8,6 +8,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import com.exceptions.IncompleteRegistrationException
+import com.services.AnalyticsService
 import kotlinx.serialization.Serializable
 import sun.util.logging.resources.logging
 
@@ -141,6 +142,24 @@ fun Routing.configureUserRoutes() {
                 call.respond(HttpStatusCode.OK, user)
             } else {
                 call.respond(HttpStatusCode.NotFound, mapOf("error" to "User not found"))
+            }
+        }
+
+        //Get owner analytics
+        get("/analytics/{id}") {
+            val id = call.parameters["id"]
+            if (id == null) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "ID is required"))
+                return@get
+            }
+            try {
+                val analyticsResponse = AnalyticsService.getAnalyticsData(id)
+                call.respond(HttpStatusCode.OK, analyticsResponse)
+            } catch (e: Exception) {
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    mapOf("error" to (e.message ?: "Failed to fetch analytics"))
+                )
             }
         }
     }

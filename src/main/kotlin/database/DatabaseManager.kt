@@ -399,6 +399,52 @@ object DatabaseManager {
         }
     }
 
+    suspend fun getMatchesByPropertyId(propertyId: String): List<Match> {
+        return try {
+            matchesCollection?.find(Match::propertyId eq propertyId)?.toList() ?: emptyList()
+        } catch (e: Exception) {
+            logger.error("Error fetching matches by property ID", e)
+            emptyList()
+        }
+    }
+
+    suspend fun getMatchCountByPropertyId(propertyId: String): Int {
+        return try {
+            matchesCollection?.countDocuments(Match::propertyId eq propertyId)?.toInt() ?: 0
+        } catch (e: Exception) {
+            logger.error("Error fetching match count by property ID", e)
+            0
+        }
+    }
+
+    suspend fun getAverageMatchScoreByPropertyId(propertyId: String): Double {
+        return try {
+            val matches = matchesCollection?.find(Match::propertyId eq propertyId)?.toList() ?: emptyList()
+            if (matches.isEmpty()) {
+                0.0
+            } else {
+                matches.map { it.propertyMatchScore }.average()
+            }
+        } catch (e: Exception) {
+            logger.error("Error fetching average match score by property ID", e)
+            0.0
+        }
+    }
+
+    suspend fun getRoommateNumByPropertyId(propertyId: String): Int {
+        return try {
+            val matches = matchesCollection?.find(Match::propertyId eq propertyId)?.toList() ?: emptyList()
+            if (matches.isEmpty()) {
+                0
+            } else {
+                matches.flatMap { it.roommateMatches }.distinctBy { it.roommateId }.size
+            }
+        } catch (e: Exception) {
+            logger.error("Error fetching roommate number by property ID", e)
+            0
+        }
+    }
+
 
 //------------------------------Dislikes--------------------------------------------------------------
 
