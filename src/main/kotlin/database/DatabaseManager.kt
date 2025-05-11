@@ -313,6 +313,32 @@ object DatabaseManager {
         return emptyList()
     }
 
+    suspend fun updateProperty(property: Property): Boolean? {
+        return try {
+            val updatedProperty = propertiesCollection?.updateOneById(property.id.toString(), property)
+            if (updatedProperty != null) {
+                logger.info("Property updated successfully: ${property.title}")
+                true
+            } else {
+                logger.error("Failed to update property: ${property.title}")
+                false
+            }
+        } catch (e: Exception) {
+            logger.error("Error updating property", e)
+            null
+        }
+    }
+
+    suspend fun deletePropertyById(id: String): Boolean {
+        return try {
+            val result = propertiesCollection?.deleteOneById(id)
+            result?.wasAcknowledged() == true
+        } catch (e: Exception) {
+            logger.error("Error deleting property by ID", e)
+            false
+        }
+    }
+
 
 
     suspend fun getPropertyById(id: String): Property? {
