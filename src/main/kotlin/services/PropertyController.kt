@@ -33,4 +33,43 @@ object PropertyController {
     suspend fun getPropertyById(propertyId: String): Property? {
         return DatabaseManager.getPropertyById(propertyId)
     }
+
+    suspend fun updateAvailability(propertyId: String, isAvailable: Boolean): Boolean? {
+        val property = DatabaseManager.getPropertyById(propertyId)
+            ?: throw IllegalArgumentException("Property with this ID does not exist.")
+
+        val updatedProperty = property.copy(available = isAvailable)
+
+        return DatabaseManager.updateProperty(updatedProperty)
+    }
+
+    suspend fun deleteProperty(propertyId: String): Boolean {
+        return DatabaseManager.deletePropertyById(propertyId)
+    }
+
+    suspend fun updateProperty(propertyId: String, property: Property): Boolean? {
+        val existingProperty = DatabaseManager.getPropertyById(propertyId)
+            ?: throw IllegalArgumentException("Property with this ID does not exist.")
+
+        val updatedProperty = existingProperty.copy(
+            id = propertyId,
+            ownerId = property.ownerId,
+            title = property.title,
+            address = property.address,
+            latitude = property.latitude,
+            longitude = property.longitude,
+            type = property.type,
+            canContainRoommates = property.canContainRoommates,
+            CurrentRoommatesIds = property.CurrentRoommatesIds,
+            roomsNumber = property.roomsNumber,
+            bathrooms = property.bathrooms,
+            floor = property.floor,
+            size = property.size,
+            pricePerMonth = property.pricePerMonth,
+            features = property.features,
+            photos = property.photos
+        )
+
+        return DatabaseManager.updateProperty(updatedProperty)
+    }
 }

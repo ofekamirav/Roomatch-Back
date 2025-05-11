@@ -78,6 +78,74 @@ fun Routing.configurePropertyRoutes() {
             }
 
         }
+        //Update Property availability
+        put("/{propertyId}/availability") {
+            try {
+                val propertyId = call.parameters["propertyId"]
+                if (propertyId == null) {
+                    call.respondText("Property Id is required", status = HttpStatusCode.BadRequest)
+                    return@put
+                }
+                val isAvailable = call.receive<Boolean>()
+                val result = PropertyController.updateAvailability(propertyId, isAvailable)
+
+                if (result == true) {
+                    call.respond(HttpStatusCode.OK, mapOf("message" to "Property availability updated successfully"))
+                } else {
+                    call.respond(HttpStatusCode.NotFound, mapOf("error" to "Property not found"))
+                }
+            } catch (e: Exception) {
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    mapOf("error" to (e.message ?: "Internal server error"))
+                )
+            }
+        }
+        //Delete Property
+        delete("/{propertyId}") {
+            try {
+                val propertyId = call.parameters["propertyId"]
+                if (propertyId == null) {
+                    call.respondText("Property Id is required", status = HttpStatusCode.BadRequest)
+                    return@delete
+                }
+                val result = PropertyController.deleteProperty(propertyId)
+
+                if (result) {
+                    call.respond(HttpStatusCode.NoContent)
+                } else {
+                    call.respond(HttpStatusCode.NotFound, mapOf("error" to "Property not found"))
+                }
+            } catch (e: Exception) {
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    mapOf("error" to (e.message ?: "Internal server error"))
+                )
+            }
+        }
+        //Update Property
+        put("/{propertyId}") {
+            try {
+                val propertyId = call.parameters["propertyId"]
+                if (propertyId == null) {
+                    call.respondText("Property Id is required", status = HttpStatusCode.BadRequest)
+                    return@put
+                }
+                val property = call.receive<Property>()
+                val result = PropertyController.updateProperty(propertyId, property)
+
+                if (result != null) {
+                    call.respond(HttpStatusCode.OK, result)
+                } else {
+                    call.respond(HttpStatusCode.NotFound, mapOf("error" to "Property not found"))
+                }
+            } catch (e: Exception) {
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    mapOf("error" to (e.message ?: "Internal server error"))
+                )
+            }
+        }
 
 
     }
