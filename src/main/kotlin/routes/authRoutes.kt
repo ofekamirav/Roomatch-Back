@@ -7,6 +7,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import com.database.DatabaseManager
 import com.models.PasswordResetRequest
+import com.models.RequestRefresh
 import com.models.ResetPassword
 import com.services.UserService
 
@@ -16,22 +17,18 @@ fun Routing.configureAuthRoutes() {
 
         post("/refresh") {
             try {
-                val request = call.receive<Map<String, String>>() // receives access and refresh tokens
-                val refreshToken = request["refreshToken"] ?: return@post call.respond(
-                    HttpStatusCode.BadRequest,
-                    mapOf("error" to "Refresh Token is required")
-                )
+                val request = call.receive<RequestRefresh>()
+                val refreshToken = request.refreshToken
 
-                //Verify the refresh token
+                // Verify the refresh token
                 val decodedJWT = JWTUtils.verifyRefreshToken(refreshToken).verify(refreshToken)
                 val email = decodedJWT.getClaim("email").asString()
 
-                //Check if the user exists and the refresh token is valid
-                val roomate = DatabaseManager.getRoomateByEmail(email)
-                val owner = if (roomate != null) {
-                    DatabaseManager.getOwnerByEmail(email)
-                }else null
-                if ((roomate?.refreshToken ?: owner?.refreshToken) != refreshToken) {
+                // Check if the user exists and the refresh token is valid
+                val roommate = DatabaseManager.getRoomateByEmail(email)
+                val owner = if (roommate != null) null else DatabaseManager.getOwnerByEmail(email)
+
+                if ((roommate?.refreshToken ?: owner?.refreshToken) != refreshToken) {
                     return@post call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Invalid Refresh Token"))
                 }
 
@@ -39,16 +36,15 @@ fun Routing.configureAuthRoutes() {
                 val newAccessToken = JWTUtils.generateToken(email)
                 val newRefreshToken = JWTUtils.generateRefreshToken(email)
 
-                if (roomate != null){
-                    JWTUtils.updateRefreshToken(roomate, newRefreshToken)
-                } else if (owner != null){
+                if (roommate != null) {
+                    JWTUtils.updateRefreshToken(roommate, newRefreshToken)
+                } else if (owner != null) {
                     JWTUtils.updateRefreshToken(owner, newRefreshToken)
                 }
 
-
-                call.respond(HttpStatusCode.OK, mapOf(
-                    "token" to newAccessToken,
-                    "refreshToken" to newRefreshToken,
+                call.respond(HttpStatusCode.OK, RequestRefresh(
+                    accessToken = newAccessToken,
+                    refreshToken = newRefreshToken
                 ))
 
             } catch (e: Exception) {
@@ -58,6 +54,7 @@ fun Routing.configureAuthRoutes() {
                 )
             }
         }
+
 
         // Request Password Reset
         post("/request-password-reset") {
