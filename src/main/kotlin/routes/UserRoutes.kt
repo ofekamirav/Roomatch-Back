@@ -49,6 +49,31 @@ fun Routing.configureUserRoutes() {
             }
         }
 
+        // Update roommate user
+        put("/{id}") {
+            try {
+                val id = call.parameters["id"]
+                if (id == null) {
+                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to "ID is required"))
+                    return@put
+                }
+
+                val user = call.receive<RoommateUser>()
+                val updatedUser = UserService.updateRoommate(id, user)
+
+                if (updatedUser != null) {
+                    call.respond(HttpStatusCode.OK, updatedUser)
+                } else {
+                    call.respond(HttpStatusCode.NotFound, mapOf("error" to "User not found"))
+                }
+            } catch (e: Exception) {
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    mapOf("error" to (e.message ?: "Failed to update user"))
+                )
+            }
+        }
+
 
         // Get roommate by ID
         get("/{id}") {
@@ -125,6 +150,31 @@ fun Routing.configureUserRoutes() {
                 call.respond(
                     HttpStatusCode.InternalServerError,
                     mapOf("error" to (e.message ?: "An internal server error occurred"))
+                )
+            }
+        }
+
+        // Update property owner user
+        put("/{id}") {
+            try {
+                val id = call.parameters["id"]
+                if (id == null) {
+                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to "ID is required"))
+                    return@put
+                }
+
+                val user = call.receive<PropertyOwnerUser>()
+                val updatedUser = UserService.updateOwner(id, user)
+
+                if (updatedUser != null) {
+                    call.respond(HttpStatusCode.OK, updatedUser)
+                } else {
+                    call.respond(HttpStatusCode.NotFound, mapOf("error" to "User not found"))
+                }
+            } catch (e: Exception) {
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    mapOf("error" to (e.message ?: "Failed to update user"))
                 )
             }
         }

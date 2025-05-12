@@ -209,4 +209,59 @@ object UserService {
             throw IllegalArgumentException("Invalid ID token.")
         }
     }
+
+    suspend fun updateRoommate(id: String, user: RoommateUser): RoommateUser? {
+        val existingUser = DatabaseManager.getRoommateById(id)
+            ?: throw IllegalArgumentException("User with this ID does not exist.")
+
+        val updatedUser = existingUser.copy(
+            id = id,
+            email = user.email,
+            fullName = user.fullName,
+            phoneNumber = user.phoneNumber,
+            birthDate = user.birthDate,
+            password = user.password,
+            profilePicture = user.profilePicture,
+            resetToken = user.resetToken,
+            resetTokenExpiration = user.resetTokenExpiration,
+            refreshToken = user.refreshToken,
+            attributes = user.attributes,
+            longitude = user.longitude,
+            latitude = user.latitude,
+            lookingForRoomies = user.lookingForRoomies,
+            lookingForCondo = user.lookingForCondo,
+            maxPrice = user.maxPrice,
+            minPrice = user.minPrice,
+            maxPropertySize = user.maxPropertySize,
+            minPropertySize = user.minPropertySize,
+            personalBio = user.personalBio,
+            preferredRadiusKm = user.preferredRadiusKm,
+            hobbies = user.hobbies,
+            roommatesNumber = user.roommatesNumber,
+            gender = user.gender,
+            work = user.work
+        )
+
+        return DatabaseManager.updateRoommate(updatedUser)
+    }
+
+    suspend fun updateOwner(id: String, user: PropertyOwnerUser): PropertyOwnerUser? {
+        val existingUser = DatabaseManager.getOwnerById(id)
+            ?: throw IllegalArgumentException("User with this ID does not exist.")
+
+        val updatedUser = existingUser.copy(
+            id = id,
+            email = user.email,
+            fullName = user.fullName,
+            phoneNumber = user.phoneNumber,
+            birthDate = user.birthDate,
+            password = user.password,
+            profilePicture = user.profilePicture,
+            resetToken = user.resetToken,
+            resetTokenExpiration = user.resetTokenExpiration,
+            refreshToken = user.refreshToken
+        )
+
+        return DatabaseManager.updateOwner(updatedUser)
+    }
 }

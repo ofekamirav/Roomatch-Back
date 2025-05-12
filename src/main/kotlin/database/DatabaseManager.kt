@@ -58,6 +58,16 @@ object DatabaseManager {
         return roommatesCollection
     }
 
+    suspend fun updateRoommate(user: RoommateUser): RoommateUser? {
+        return try {
+            roommatesCollection?.updateOneById(user.id.toString(), user)
+            user
+        } catch (e: Exception) {
+            logger.error("Error updating roommate", e)
+            null
+        }
+    }
+
     suspend fun getAllRoommates(): List<RoommateUser> {
         try {
             val roommates = roommatesCollection?.find()?.toList()
