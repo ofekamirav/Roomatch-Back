@@ -481,6 +481,21 @@ object DatabaseManager {
         }
     }
 
+    suspend fun deleteMatch(matchId: String): Boolean {
+        try {
+            val result = matchesCollection?.deleteOneById(matchId)
+            if (result?.wasAcknowledged() == true) {
+                logger.info("Match deleted successfully: $matchId")
+                return true
+            } else {
+                logger.error("Failed to delete match: $matchId")
+            }
+        } catch (e: Exception) {
+            logger.error("Error deleting match by ID", e)
+        }
+        return false
+    }
+
 
 //------------------------------Dislikes--------------------------------------------------------------
 
