@@ -274,6 +274,20 @@ object MatchService {
         logger.info("Cleared match feed for seeker $seekerId")
     }
 
+    //Delete a match
+    suspend fun deleteMatch(matchId: String): Boolean {
+        return try {
+            val result = DatabaseManager.deleteMatch(matchId)
+            userMatchCache.values.forEach { matches ->
+                matches.filter { it.propertyId == matchId }
+            }
+            result
+        } catch (e: Exception) {
+            logger.error("Error deleting match with ID $matchId", e)
+            false
+        }
+    }
+
 
 
 }
