@@ -1,6 +1,8 @@
 package com.database
 
 import com.models.*
+import com.mongodb.client.model.Filters.eq
+import com.mongodb.client.model.Updates
 import org.bson.types.ObjectId
 import org.litote.kmongo.coroutine.CoroutineCollection
 import org.litote.kmongo.coroutine.CoroutineDatabase
@@ -402,8 +404,11 @@ object DatabaseManager {
 
     suspend fun insertMatch(match: Match): Match? {
         return try {
-            val generatedId = ObjectId().toHexString()
-            val matchWithId = match.copy(id = generatedId)
+            val matchWithId = if (match.id?.isBlank() == true) {
+                match.copy(id = ObjectId().toHexString())
+            } else {
+                match
+            }
             val result = matchesCollection?.insertOne(matchWithId)
             if (result?.wasAcknowledged() == true) {
                 matchWithId
@@ -425,6 +430,13 @@ object DatabaseManager {
             null
         }
     }
+
+    suspend fun appendSeenMatch(seekerId: String, match: SeenMatch) {
+        val filter = eq("seekerId", seekerId)
+        val update = Updates.addToSet("seenMatches", match)
+        disLikeCollection?.updateOne(filter, update)
+    }
+
 
     suspend fun getMatchesBySeekerId(seekerId: String): List<Match> {
         return try {

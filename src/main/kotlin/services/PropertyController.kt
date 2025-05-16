@@ -3,9 +3,10 @@ package com.services
 
 import com.models.Property
 import com.database.DatabaseManager
+import org.slf4j.LoggerFactory
 
 object PropertyController {
-
+    private val logger = LoggerFactory.getLogger(PropertyController::class.java)
     suspend fun uploadProperty(ownerId: String, property: Property): Property {
         val existingOwner = DatabaseManager.getOwnerById(ownerId)
         if (existingOwner == null) {
@@ -31,7 +32,10 @@ object PropertyController {
     }
 
     suspend fun getPropertyById(propertyId: String): Property? {
-        return DatabaseManager.getPropertyById(propertyId)
+        val property = DatabaseManager.getPropertyById(propertyId)
+            ?: throw IllegalArgumentException("Property with this ID does not exist.")
+        logger.info("Property found: ${property.id}")
+        return property
     }
 
     suspend fun updateAvailability(propertyId: String, isAvailable: Boolean): Boolean? {

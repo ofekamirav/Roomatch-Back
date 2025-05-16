@@ -6,14 +6,17 @@ import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.litote.kmongo.deleteMany
+import org.slf4j.LoggerFactory
 
 fun Route.configureMatchRoutes() {
+    val logger = LoggerFactory.getLogger(MatchService::class.java)
     route("/match") {
         get("/{seekerId}") {
             val seekerId = call.parameters["seekerId"]
             val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 1
 
             if (seekerId == null) {
+                logger.error("Seeker Id is required")
                 call.respond(HttpStatusCode.BadRequest, "Seeker Id is required")
                 return@get
             }
@@ -21,8 +24,10 @@ fun Route.configureMatchRoutes() {
             val matches = MatchService.getNextMatchesForSwipe(seekerId, limit)
 
             if (matches.isNotEmpty()) {
+                logger.info("Matches found for seekerId: $seekerId, limit: $limit")
                 call.respond(HttpStatusCode.OK, matches)
             } else {
+                logger.info("No more matches for seekerId: $seekerId")
                 call.respond(HttpStatusCode.NoContent, mapOf("message" to "No more matches"))
             }
         }
