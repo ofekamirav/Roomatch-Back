@@ -7,6 +7,7 @@ import com.utils.haversine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import org.bson.types.ObjectId
 import org.slf4j.LoggerFactory
 import java.util.*
 
@@ -14,15 +15,15 @@ object MatchService {
 
     private val logger = LoggerFactory.getLogger(MatchService::class.java)
     val userMatchCache: MutableMap<String, List<Match>> = mutableMapOf()
-    val userSwipes: MutableMap<String, MutableSet<String>> = mutableMapOf()
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
     //Calculate a Match between a seeker and a property and roommates
-    suspend fun performMatch(seekerId: String): List<Match>? {
+    suspend fun performMatch(seekerId: String, limit: Int): List<Match> {
+        logger.info("performMatch: seekerId = $seekerId, limit = $limit")
         val seeker = DatabaseManager.getRoommateById(seekerId)
         if (seeker == null) {
             logger.warn("Seeker not found for seekerId: $seekerId")
-            return null
+            return emptyList()
         }
 
         val allPropertiesDeferred = coroutineScope.async { DatabaseManager.getAllAvailableProperties() }
@@ -35,6 +36,8 @@ object MatchService {
         val dislike = DatabaseManager.getDisLikeBySeekerId(seekerId)
         val dislikedProperties = dislike?.dislikedPropertiesIds ?: emptyList()
         val dislikedRoommates = dislike?.dislikedRoommatesIds ?: emptyList()
+        val seenMatches = dislike?.seenMatches ?: emptyList()
+
 
         val locationProperties = allProperties.filter { property ->
             val propLat = property.latitude
@@ -71,9 +74,11 @@ object MatchService {
 
         logger.info("Potential properties count: ${potentialProperties.size}")
 
-        val matches: MutableList<Match> = mutableListOf()
+        val matches = mutableListOf<Match>()
+        val random = Random()
 
         for (property in potentialProperties) {
+            if (matches.size >= limit) break
 
             //Filter out roommates that already live in this ROOM
             val roommatesInProperty =
@@ -86,7 +91,6 @@ object MatchService {
             }
 
             // Create Random list of roommates
-            val random = Random()
             val shuffledRoommates = potentialRoommates.shuffled(random)
 
             // Calculate roommate match score
@@ -94,27 +98,33 @@ object MatchService {
                 val roommateMatchScore = calculateRoommateMatchScore(seeker, roommate)
                 logger.info("Roommate match score: $roommateMatchScore")
                 RoommateMatch(roommate.id, roommate.fullName, roommateMatchScore)
-            }.filter { it.matchScore >= 55 }
+            }.filter { it.matchScore >= 25 } //needs to improve this
 
             val combineRoommates = roommateMatches.take(seeker.roommatesNumber)
+            logger.info("combineRoommates: $combineRoommates")
 
-            //if(combineRoommates.size<seeker.roommatesNumber) continue
+            if (property.id != null && combineRoommates.isNotEmpty()) {
+                val isAlreadySeen = seenMatches.any { seen ->
+                    seen.propertyId == property.id &&
+                            seen.roommateIds.toSet() == combineRoommates.mapNotNull { it.roommateId }.toSet()
+                }
+                if (isAlreadySeen) continue
 
-            if (property.id != null) {
                 val match = Match(
+                    id = ObjectId().toHexString(),
                     seekerId = seekerId,
                     propertyId = property.id,
                     roommateMatches = combineRoommates,
                     propertyMatchScore = calculatePropertyMatchScore(seeker, property)
                 )
                 matches.add(match)
+
+                val newSeen = SeenMatch(property.id, combineRoommates.mapNotNull { it.roommateId })
+                DatabaseManager.appendSeenMatch(seekerId, newSeen)
             }
         }
 
-
-        userMatchCache[seekerId] = matches
         logger.info("performMatch: matches.size = ${matches.size}")
-
 
         return matches
     }
@@ -246,40 +256,19 @@ object MatchService {
     }
 
 
-
     suspend fun getNextMatchesForSwipe(seekerId: String, limit: Int): List<Match> {
-        logger.info("getNextMatchesForSwipe: seekerId = $seekerId, limit = $limit")
-
-        var matches = userMatchCache[seekerId]
-
-        if (matches == null || matches.isEmpty()) {
-            matches = performMatch(seekerId)
-        }
-
-        if (matches == null || matches.isEmpty()) {
-            userMatchCache.remove(seekerId)
-            return emptyList()
-        }
-
-        val nextMatches = matches.take(limit)
-        userMatchCache[seekerId] = matches.drop(limit)
-
-        return nextMatches
+        return performMatch(seekerId, limit)
     }
 
-
-    //Clear the feed for the user
-    fun clearUserFeed(seekerId: String) {
-        userMatchCache.remove(seekerId)
-        logger.info("Cleared match feed for seeker $seekerId")
-    }
 
     //Delete a match
     suspend fun deleteMatch(matchId: String): Boolean {
         return try {
             val result = DatabaseManager.deleteMatch(matchId)
-            userMatchCache.values.forEach { matches ->
-                matches.filter { it.propertyId == matchId }
+            if (result) {
+                logger.info("Match with ID $matchId deleted successfully")
+            } else {
+                logger.warn("Failed to delete match with ID $matchId")
             }
             result
         } catch (e: Exception) {
