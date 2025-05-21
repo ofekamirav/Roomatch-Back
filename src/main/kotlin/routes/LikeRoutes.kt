@@ -51,7 +51,7 @@ fun Routing.configureLikeRoutes() {
                 if (dislikeResult) {
                     call.respond(HttpStatusCode.OK)
                 } else {
-                    call.respond(HttpStatusCode.OK, mapOf("message" to "Property liked, no dislikes updated"))
+                    call.respond(HttpStatusCode.BadRequest, mapOf("message" to "Property liked, no dislikes updated"))
                 }
             } catch (e: Exception) {
                 call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "Internal server error")))
@@ -66,7 +66,7 @@ fun Routing.configureLikeRoutes() {
                 if (disLikeResult) {
                     call.respond(HttpStatusCode.OK)
                 } else {
-                    call.respond(HttpStatusCode.OK, mapOf("message" to "Roommate liked, no dislikes updated"))
+                    call.respond(HttpStatusCode.BadRequest, mapOf("message" to "Roommate liked, no dislikes updated"))
                 }
             } catch (e: Exception) {
                 call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "Internal server error")))

@@ -354,11 +354,13 @@ object DatabaseManager {
 
 
     suspend fun getPropertyById(id: String): Property? {
-        return try {
-            propertiesCollection?.findOneById(id)
+         try {
+            val property = propertiesCollection?.findOne(Property::id eq id)
+            logger.info("Property found: $id")
+            return property
         } catch (e: Exception) {
             logger.error("Error fetching property by ID", e)
-            null
+             return null
         }
     }
 

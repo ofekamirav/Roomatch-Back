@@ -43,6 +43,7 @@ object LikeController {
             } else {
                 val errorMsg = "Failed to update dislike roomies"
                 logger.error(errorMsg)
+                return false
             }
         }
         return false

@@ -12,6 +12,10 @@ data class Match(
     val propertyId: String,
     val roommateMatches: List<RoommateMatch> = emptyList(),
     val propertyMatchScore: Int,
+    val propertyTitle: String,
+    val propertyPrice: Int,
+    val propertyAddress: String,
+    val propertyPhoto: String,
     )
 
 
