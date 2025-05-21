@@ -97,7 +97,7 @@ object MatchService {
             val roommateMatches = shuffledRoommates.map { roommate ->
                 val roommateMatchScore = calculateRoommateMatchScore(seeker, roommate)
                 logger.info("Roommate match score: $roommateMatchScore")
-                RoommateMatch(roommate.id, roommate.fullName, roommateMatchScore)
+                RoommateMatch(roommate.id, roommate.fullName, roommateMatchScore, roommate.profilePicture ?: "")
             }.filter { it.matchScore >= 25 } //needs to improve this
 
             val combineRoommates = roommateMatches.take(seeker.roommatesNumber)
@@ -115,7 +115,11 @@ object MatchService {
                     seekerId = seekerId,
                     propertyId = property.id,
                     roommateMatches = combineRoommates,
-                    propertyMatchScore = calculatePropertyMatchScore(seeker, property)
+                    propertyMatchScore = calculatePropertyMatchScore(seeker, property),
+                    propertyTitle = property.title?: "",
+                    propertyPrice = property.pricePerMonth ?: 0,
+                    propertyAddress = property.address ?: "",
+                    propertyPhoto = property.photos.firstOrNull() ?: ""
                 )
                 matches.add(match)
 
