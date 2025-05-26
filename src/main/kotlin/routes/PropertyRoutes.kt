@@ -37,7 +37,7 @@ fun Routing.configurePropertyRoutes() {
         }
 
         //Get all properties of specific owner
-        get("/{ownerId}") {
+        get("/owner/{ownerId}") {
             try {
                 val ownerId = call.parameters["ownerId"]
                 if (ownerId == null) {
@@ -56,7 +56,7 @@ fun Routing.configurePropertyRoutes() {
         }
 
         //Get Property by ID
-        get("/{propertyId}"){
+        get("/id/{propertyId}"){
             try {
                 val propertyId = call.parameters["propertyId"]
                 if (propertyId == null) {

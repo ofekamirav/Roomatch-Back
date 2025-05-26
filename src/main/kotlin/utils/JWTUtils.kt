@@ -15,7 +15,7 @@ object JWTUtils {
     private const val SECRET = "SuperSecretKey"
     private const val REFRESH_SECRET = "SuperSecretRefreshKey"
     private const val EXPIRATION_TIME = 24 * 60 * 60 * 1000 // 24 Hours
-    private const val REFRESH_EXPIRATION_TIME = 15 * 24 * 60 * 60 * 1000 // 15 Days
+    private const val REFRESH_EXPIRATION_TIME = 20 * 24 * 60 * 60 * 1000 // 20 Days
 
     fun generateToken(email: String): String {
         return JWT.create()
