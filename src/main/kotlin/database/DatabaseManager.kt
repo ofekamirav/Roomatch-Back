@@ -568,6 +568,7 @@ object DatabaseManager {
                 disLikeCollection?.updateOneById(disLike.id!!, disLike)
                 disLike
             } else {
+                logger.warn("Dislike record not found for seekerId: $seekerId")
                 null
             }
         } catch (e: Exception) {
