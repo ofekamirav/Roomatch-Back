@@ -11,6 +11,12 @@ object LikeController {
     private val logger = LoggerFactory.getLogger(LikeController::class.java)
 
     suspend fun saveMatch(match: Match): Result<Match> {
+        val existing = DatabaseManager.getMatchById(match.id.toString())
+        if (existing != null) {
+            logger.info("Match already exists: ${match.id}")
+            return Result.success(existing)
+        }
+
         val insertedMatch = DatabaseManager.insertMatch(match)
         return if (insertedMatch != null) {
             logger.info("Match saved successfully: ${match.id}")
@@ -22,52 +28,52 @@ object LikeController {
         }
     }
 
+
     //Like Property--dislike the roomies
     suspend fun likeProperty(match: Match): Boolean {
-        val dislikeRoomiesFromMatch = mutableListOf<RoommateUser>()
+        val currentDislikeRoommies = DatabaseManager.getDislikeRoommatesIds(match.seekerId)
+        val newRoommateIds = match.roommateMatches.map { it.roommateId }
+            .filterNot { currentDislikeRoommies.contains(it) }
 
-        match.roommateMatches.forEach { roommateMatch ->
-            val roommate = DatabaseManager.getRoommateById(roommateMatch.roommateId)
-            if (roommate != null) {
-                dislikeRoomiesFromMatch.add(roommate)
-            }
+        if (newRoommateIds.isEmpty()) {
+            logger.info("No new roommates to dislike for seekerId=${match.seekerId}")
+            return true
         }
 
-        if(dislikeRoomiesFromMatch.isNotEmpty()){
-            val currentDislikeRoommies = DatabaseManager.getDislikeRoommatesIds(match.seekerId)
-            val newDislikeRoommies = currentDislikeRoommies + dislikeRoomiesFromMatch.map { it.id }
-            val updatedDislike = DatabaseManager.updateDislikeRoommates(match.seekerId, newDislikeRoommies)
-            if (updatedDislike != null) {
-                logger.info("Dislike roomies updated successfully: ${match.seekerId}")
-                return true
-            } else {
-                val errorMsg = "Failed to update dislike roomies"
-                logger.error(errorMsg)
-                return false
-            }
+        val updatedDislikeRoomies = (currentDislikeRoommies + newRoommateIds).distinct()
+        val updatedDislike = DatabaseManager.updateDislikeRoommates(match.seekerId, updatedDislikeRoomies)
+
+        return if (updatedDislike != null) {
+            logger.info("Updated disliked roommates for ${match.seekerId}")
+            true
+        } else {
+            logger.error("Failed to update disliked roommates for ${match.seekerId}")
+            false
         }
-        return false
     }
 
     //Like Roommate--dislike the properties
     suspend fun likeRoommate(match: Match): Boolean {
-        try {
-            val currentDislikeProperties = DatabaseManager.getDislikePropertiesIds(match.seekerId)
-            val newDislikeProperties = currentDislikeProperties + match.propertyId
-            val updatedDislike = DatabaseManager.updateDislikeProperties(match.seekerId, newDislikeProperties)
-            if (updatedDislike != null) {
-                logger.info("Dislike properties updated successfully: ${match.seekerId}")
-                return true
-            } else {
-                val errorMsg = "Failed to update dislike properties"
-                logger.error(errorMsg)
-                return false
-            }
-        } catch (e: Exception) {
-            logger.error("Error while updating dislike properties: ${e.message}")
-            throw e
+        val currentDislikeProperties = DatabaseManager.getDislikePropertiesIds(match.seekerId)
+        val propertyId = match.propertyId
+
+        if (propertyId == null || currentDislikeProperties.contains(propertyId)) {
+            logger.info("Property already disliked or null for ${match.seekerId}")
+            return true
+        }
+
+        val updatedDislikeProperties = currentDislikeProperties + propertyId
+        val updatedDislike = DatabaseManager.updateDislikeProperties(match.seekerId, updatedDislikeProperties)
+
+        return if (updatedDislike != null) {
+            logger.info("Updated disliked properties for ${match.seekerId}")
+            true
+        } else {
+            logger.error("Failed to update disliked properties for ${match.seekerId}")
+            false
         }
     }
+
 
 
     suspend fun getMatchesBySeekerId(seekerId: String): List<Match> {

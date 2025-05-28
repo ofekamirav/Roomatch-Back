@@ -8,30 +8,39 @@
 
         suspend fun swipeLeft(match: Match): Boolean {
             try {
-                // Fetch existing dislike entry for the seeker (if any)
                 val existing = DatabaseManager.getDislikeBySeekerId(match.seekerId)
 
-                val dislikedPropertyId = match.propertyId
-                val dislikedRoommateIds = match.roommateMatches.map { it.roommateId }
+                val newPropertyId = match.propertyId?.takeIf {
+                    existing?.dislikedPropertiesIds?.contains(it) != true
+                }
+
+                val newRoommateIds = match.roommateMatches.map { it.roommateId }
+                    .filterNot { existing?.dislikedRoommatesIds?.contains(it) == true }
 
                 if (existing != null) {
+                    if (newPropertyId == null && newRoommateIds.isEmpty()) {
+                        logger.info("Nothing new to add to dislike for ${match.seekerId}")
+                        return true
+                    }
+
                     val updated = existing.copy(
-                        dislikedPropertiesIds = existing.dislikedPropertiesIds + dislikedPropertyId,
-                        dislikedRoommatesIds = existing.dislikedRoommatesIds + dislikedRoommateIds
+                        dislikedPropertiesIds = existing.dislikedPropertiesIds + listOfNotNull(newPropertyId),
+                        dislikedRoommatesIds = existing.dislikedRoommatesIds + newRoommateIds
                     )
                     return DatabaseManager.updateDislike(updated)
                 } else {
                     val newDislike = DisLike(
                         seekerId = match.seekerId,
-                        dislikedPropertiesIds = listOf(dislikedPropertyId),
-                        dislikedRoommatesIds = dislikedRoommateIds
+                        dislikedPropertiesIds = listOfNotNull(newPropertyId),
+                        dislikedRoommatesIds = newRoommateIds
                     )
                     return DatabaseManager.insertDislike(newDislike)
                 }
             } catch (e: Exception) {
-                logger.error("Error in swipeLeft", e)
+                logger.error("Error in swipeLeft for ${match.seekerId}", e)
                 return false
             }
         }
+
     }
 
