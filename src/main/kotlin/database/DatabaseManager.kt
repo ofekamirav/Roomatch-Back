@@ -17,11 +17,24 @@ import org.litote.kmongo.*
 
 
 object DatabaseManager {
+    private val isTestEnv = System.getenv("KTOR_TEST") == "true"
 
-    private val dotenv = dotenv()
-    private val mongoUser: String = URLEncoder.encode(dotenv["MONGODB_USER"], "UTF-8") ?: error("MONGODB_USER is not set in .env")
-    private val mongoPassword: String = URLEncoder.encode(dotenv["MONGODB_PASSWORD"],"UTF-8") ?: error("MONGODB_PASSWORD is not set in .env")
-    private val mongoCluster: String = dotenv["MONGODB_CLUSTER"] ?: error("MONGODB_CLUSTER is not set in .env")
+    private val dotenv = if (isTestEnv)
+        io.github.cdimascio.dotenv.Dotenv.configure()
+            .directory("src/main/resources") // 👈 this is the correct location!
+            .filename(".env.test")
+            .load()
+    else
+        io.github.cdimascio.dotenv.Dotenv.configure()
+            .directory("src/main/resources")
+            .load()
+
+    private val mongoUser: String = URLEncoder.encode(dotenv["MONGODB_USER"], "UTF-8")
+    private val mongoPassword: String = URLEncoder.encode(dotenv["MONGODB_PASSWORD"], "UTF-8")
+    private val mongoCluster: String = dotenv["MONGODB_CLUSTER"]
+    private val mongoDb: String = dotenv["MONGODB_DB"] ?: "RooMatchDB" // fallback
+
+
 
     private val connectionString: String = "mongodb+srv://$mongoUser:$mongoPassword@$mongoCluster/?retryWrites=true&w=majority&appName=Cluster0"
     private var client = KMongo.createClient(connectionString)
@@ -48,7 +61,7 @@ object DatabaseManager {
 
     private fun connect() {
         try {
-            database = client.getDatabase("RooMatchDB").coroutine
+            database = client.getDatabase(mongoDb).coroutine
         } catch (e: Exception) {
             logger.error("Error connecting to mongoDB", e)
         }
