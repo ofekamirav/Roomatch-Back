@@ -10,6 +10,7 @@ import com.models.PasswordResetRequest
 import com.models.RequestRefresh
 import com.models.ResetPassword
 import com.services.UserService
+import io.ktor.server.application.*
 
 fun Routing.configureAuthRoutes() {
 
@@ -60,15 +61,31 @@ fun Routing.configureAuthRoutes() {
         post("/request-password-reset") {
             try {
                 val request = call.receive<PasswordResetRequest>()
-                val success = UserService.requestPasswordReset(request.email, request.userType)
+                val result = UserService.requestPasswordReset(request.email, request.userType)
 
-                if (success) {
-                    call.respond(HttpStatusCode.OK, mapOf("message" to "Password reset token generated successfully."))
-                } else {
-                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Unable to generate reset token. Check email or user type."))
+                when (result) {
+                    "SUCCESS" -> {
+                        call.respond(HttpStatusCode.OK, mapOf("message" to "Password reset token generated and sent successfully."))
+                    }
+                    "USER_NOT_FOUND" -> {
+                        call.respond(HttpStatusCode.NotFound, mapOf("error" to "User with the provided email and type not found."))
+                    }
+                    "INVALID_USER_TYPE" -> {
+                        call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid user type provided."))
+                    }
+                    "TOKEN_SET_FAILED" -> {
+                        call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to set reset token. Please try again later."))
+                    }
+                    else -> {
+                        call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "An unexpected error occurred during password reset request."))
+                    }
                 }
-            } catch (e: Exception) {
-                call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "Internal server error")))
+            } catch (e: ContentTransformationException) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid request body: ${e.message}"))
+            }
+            catch (e: Exception) {
+                application.log.error("Error in /request-password-reset: ${e.localizedMessage}", e)
+                call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "An internal server error occurred.")))
             }
         }
 
