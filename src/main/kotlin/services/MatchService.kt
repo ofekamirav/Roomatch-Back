@@ -112,7 +112,7 @@ object MatchService {
                 logger.info("Roommate match score: $roommateMatchScore")
                 RoommateMatch(roommate.id, roommate.fullName, roommateMatchScore, roommate.profilePicture ?: "")
             }
-                .filter { it.matchScore >= 55 }
+                .filter { it.matchScore >= 50 }
                 .sortedByDescending { it.matchScore } // Sort by match score in descending order
 
             val combineRoommates = roommateMatches.take(seeker.roommatesNumber)
@@ -137,11 +137,9 @@ object MatchService {
                     propertyPhoto = property.photos.firstOrNull() ?: ""
                 )
                 // Only add if property score meets a minimum threshold
-                if (match.propertyMatchScore >= 55) { // New filter for property match quality
+                if (match.propertyMatchScore >= 50) { // New filter for property match quality
                     matches.add(match)
                 }
-                val newSeen = SeenMatch(property.id, combineRoommates.mapNotNull { it.roommateId })
-                DatabaseManager.appendSeenMatch(seekerId, newSeen)
             }
         }
 
