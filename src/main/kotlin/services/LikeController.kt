@@ -1,9 +1,6 @@
 package com.services
 import com.database.DatabaseManager
-import com.models.DisLike
-import com.models.Match
-import com.models.Property
-import com.models.RoommateUser
+import com.models.*
 import org.slf4j.LoggerFactory
 
 object LikeController {
@@ -20,6 +17,10 @@ object LikeController {
         val insertedMatch = DatabaseManager.insertMatch(match)
         return if (insertedMatch != null) {
             logger.info("Match saved successfully: ${match.id}")
+            //add the roommates and property to the seen matches, making sure that the match will not be seen again
+            val combineRoommates = match.roommateMatches.mapNotNull  {it.roommateId }
+            val newSeen = SeenMatch(match.propertyId, combineRoommates)
+            DatabaseManager.appendSeenMatch(match.seekerId, newSeen)
             Result.success(insertedMatch)
         } else {
             val errorMsg = "Failed to save match"
@@ -29,7 +30,7 @@ object LikeController {
     }
 
 
-    //Like Property--dislike the roomies
+    //Like Property--dislike the roommates
     suspend fun likeProperty(match: Match): Boolean {
         val currentDislikeRoommies = DatabaseManager.getDislikeRoommatesIds(match.seekerId)
         val newRoommateIds = match.roommateMatches.map { it.roommateId }
