@@ -107,14 +107,38 @@ object UserService {
         )
     }
 
-    suspend fun requestPasswordReset(email: String, userType: String): Boolean {
+    suspend fun requestPasswordReset(email: String, userType: String): String {
+        val userExists: Boolean
+
+        when (userType) {
+            "Roommate" -> {
+                val roommate = DatabaseManager.getRoomateByEmail(email)
+                userExists = roommate != null
+            }
+            "PropertyOwner" -> {
+                val owner = DatabaseManager.getOwnerByEmail(email)
+                userExists = owner != null
+            }
+            else -> return "INVALID_USER_TYPE"
+        }
+
+        if (!userExists) {
+            return "USER_NOT_FOUND"
+        }
+
         val resetToken = JWTUtils.generateToken(email)
         val expiration = System.currentTimeMillis() + 3600000
 
-        return when (userType) {
+        val tokenSetSuccessfully = when (userType) {
             "Roommate" -> DatabaseManager.setRoommateResetToken(email, resetToken, expiration)
             "PropertyOwner" -> DatabaseManager.setOwnerResetToken(email, resetToken, expiration)
             else -> false
+        }
+
+        return if (tokenSetSuccessfully) {
+            "SUCCESS"
+        } else {
+            "TOKEN_SET_FAILED"
         }
     }
 
