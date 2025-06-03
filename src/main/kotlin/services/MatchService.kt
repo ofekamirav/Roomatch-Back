@@ -136,6 +136,12 @@ object MatchService {
                     propertyAddress = property.address ?: "",
                     propertyPhoto = property.photos.firstOrNull() ?: ""
                 )
+                // Save the match to seen matches
+                val seenMatch = SeenMatch(
+                    propertyId = property.id,
+                    roommateIds = combineRoommates.mapNotNull { it.roommateId }
+                )
+                DatabaseManager.appendSeenMatch(match.seekerId, seenMatch)
                 // Only add if property score meets a minimum threshold
                 if (match.propertyMatchScore >= 50) { // New filter for property match quality
                     matches.add(match)

@@ -27,6 +27,7 @@
                         dislikedPropertiesIds = existing.dislikedPropertiesIds + listOfNotNull(newPropertyId),
                         dislikedRoommatesIds = existing.dislikedRoommatesIds + newRoommateIds
                     )
+                    logger.info("Updated dislike for ${match.seekerId} with new propertyId=$newPropertyId and newRoommateIds=$newRoommateIds")
                     return DatabaseManager.updateDislike(updated)
                 } else {
                     val newDislike = DisLike(
