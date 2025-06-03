@@ -17,10 +17,6 @@ object LikeController {
         val insertedMatch = DatabaseManager.insertMatch(match)
         return if (insertedMatch != null) {
             logger.info("Match saved successfully: ${match.id}")
-            //add the roommates and property to the seen matches, making sure that the match will not be seen again
-            val combineRoommates = match.roommateMatches.mapNotNull  {it.roommateId }
-            val newSeen = SeenMatch(match.propertyId, combineRoommates)
-            DatabaseManager.appendSeenMatch(match.seekerId, newSeen)
             Result.success(insertedMatch)
         } else {
             val errorMsg = "Failed to save match"
