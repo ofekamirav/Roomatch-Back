@@ -11,17 +11,29 @@ import org.litote.kmongo.coroutine.coroutine
 import org.litote.kmongo.eq
 import org.litote.kmongo.`in`
 import org.slf4j.LoggerFactory
-import io.github.cdimascio.dotenv.dotenv
 import java.net.URLEncoder
 import org.litote.kmongo.*
 
 
 object DatabaseManager {
+    private val isTestEnv = System.getenv("KTOR_TEST") == "true"
 
-    private val dotenv = dotenv()
-    private val mongoUser: String = URLEncoder.encode(dotenv["MONGODB_USER"], "UTF-8") ?: error("MONGODB_USER is not set in .env")
-    private val mongoPassword: String = URLEncoder.encode(dotenv["MONGODB_PASSWORD"],"UTF-8") ?: error("MONGODB_PASSWORD is not set in .env")
-    private val mongoCluster: String = dotenv["MONGODB_CLUSTER"] ?: error("MONGODB_CLUSTER is not set in .env")
+    private val dotenv = if (isTestEnv)
+        io.github.cdimascio.dotenv.Dotenv.configure()
+            .directory("src/main/resources") // 👈 this is the correct location!
+            .filename(".env.test")
+            .load()
+    else
+        io.github.cdimascio.dotenv.Dotenv.configure()
+            .directory("src/main/resources")
+            .load()
+
+    private val mongoUser: String = URLEncoder.encode(dotenv["MONGODB_USER"], "UTF-8")
+    private val mongoPassword: String = URLEncoder.encode(dotenv["MONGODB_PASSWORD"], "UTF-8")
+    private val mongoCluster: String = dotenv["MONGODB_CLUSTER"]
+    private val mongoDb: String = dotenv["MONGODB_DB"] ?: "RooMatchDB" // fallback
+
+
 
     private val connectionString: String = "mongodb+srv://$mongoUser:$mongoPassword@$mongoCluster/?retryWrites=true&w=majority&appName=Cluster0"
     private var client = KMongo.createClient(connectionString)
@@ -36,11 +48,18 @@ object DatabaseManager {
     init {
         try {
             connect()
-            roommatesCollection = database?.getCollection("roommates")
-            ownersCollection = database?.getCollection("owners")
-            propertiesCollection = database?.getCollection("properties")
-            matchesCollection = database?.getCollection("matches")
-            disLikeCollection = database?.getCollection("dislikes")
+            if (isTestEnv) {
+                roommatesCollection = database?.getCollection("roommates_test")
+                ownersCollection = database?.getCollection("owners_test")
+                propertiesCollection = database?.getCollection("properties_test")
+                matchesCollection = database?.getCollection("matches_test")
+                disLikeCollection = database?.getCollection("dislikes_test")
+            } else {
+                roommatesCollection = database?.getCollection("roommates")
+                ownersCollection = database?.getCollection("owners")
+                propertiesCollection = database?.getCollection("properties")
+            }
+
         } catch (e: Exception) {
             logger.error("Error in init database", e)
         }
@@ -48,14 +67,14 @@ object DatabaseManager {
 
     private fun connect() {
         try {
-            database = client.getDatabase("RooMatchDB").coroutine
+            database = client.getDatabase(mongoDb).coroutine
         } catch (e: Exception) {
             logger.error("Error connecting to mongoDB", e)
         }
     }
 
 
-//-------------------------Roommates---------------------------------------------------------------
+    //-------------------------Roommates---------------------------------------------------------------
     fun getRoommatesCollection(): CoroutineCollection<RoommateUser>? {
         return roommatesCollection
     }
@@ -233,11 +252,11 @@ object DatabaseManager {
 
 
     suspend fun getOwnerById(id: String): PropertyOwnerUser? {
-       return try {
+        return try {
             ownersCollection?.findOneById(id)
         } catch (e: Exception) {
-           logger.error("Error fetching owner by ID", e)
-           null
+            logger.error("Error fetching owner by ID", e)
+            null
         }
     }
 
@@ -354,13 +373,13 @@ object DatabaseManager {
 
 
     suspend fun getPropertyById(id: String): Property? {
-         try {
+        try {
             val property = propertiesCollection?.findOne(Property::id eq id)
             logger.info("Property found: $id")
             return property
         } catch (e: Exception) {
             logger.error("Error fetching property by ID", e)
-             return null
+            return null
         }
     }
 
@@ -624,7 +643,4 @@ object DatabaseManager {
             false
         }
     }
-
-
-
 }
