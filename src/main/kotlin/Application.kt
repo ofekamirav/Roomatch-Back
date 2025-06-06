@@ -1,5 +1,6 @@
 package com
 
+import com.config.AppConfig
 import com.utils.configureMiddleware
 import io.ktor.server.application.*
 import io.github.cdimascio.dotenv.dotenv
@@ -14,14 +15,18 @@ fun main(args: Array<String>) {
 
 fun Application.module() {
     try {
-        val dotenv = dotenv()
-        println("Gemini API Key Loaded: ${dotenv["GEMINI_API_KEY"]?.take(4)}***")
+        println("Gemini API Key Loaded: ${AppConfig.geminiApiKey.take(4)}***")
         val config = environment.config
         println("▶▶ Host: ${config.propertyOrNull("ktor.deployment.host")?.getString()}")
         println("▶▶ Port: ${config.propertyOrNull("ktor.deployment.port")?.getString()}")
 
         environment.monitor.subscribe(ApplicationStarted) {
             println("🚀 Application started.")
+        }
+        if (AppConfig.isTestEnv) {
+            println("Running in TEST environment")
+        } else {
+            println("Running in PROD environment")
         }
 
         environment.monitor.subscribe(ApplicationStopping) {

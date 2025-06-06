@@ -1,5 +1,6 @@
 package com.database
 
+import com.config.AppConfig
 import com.models.*
 import com.mongodb.client.model.Filters.eq
 import com.mongodb.client.model.Updates
@@ -16,72 +17,48 @@ import org.litote.kmongo.*
 
 
 object DatabaseManager {
-    private val isTestEnv = System.getenv("KTOR_TEST") == "true"
+    private val isTestEnv = AppConfig.isTestEnv
 
-    private val dotenv = if (isTestEnv)
-        io.github.cdimascio.dotenv.Dotenv.configure()
-            .directory("src/main/resources") // 👈 this is the correct location!
-            .filename(".env.test")
-            .load()
-    else
-        io.github.cdimascio.dotenv.Dotenv.configure()
-            .directory("src/main/resources")
-            .load()
+    private val mongoDb: String = AppConfig.mongoDatabase ?: "RooMatchDB" // fallback
 
-    private val mongoUser: String = URLEncoder.encode(dotenv["MONGODB_USER"], "UTF-8")
-    private val mongoPassword: String = URLEncoder.encode(dotenv["MONGODB_PASSWORD"], "UTF-8")
-    private val mongoCluster: String = dotenv["MONGODB_CLUSTER"]
-    private val mongoDb: String = dotenv["MONGODB_DB"] ?: "RooMatchDB" // fallback
-
-
-
-    private val connectionString: String = "mongodb+srv://$mongoUser:$mongoPassword@$mongoCluster/?retryWrites=true&w=majority&appName=Cluster0"
-    private var client = KMongo.createClient(connectionString)
-    private var database: CoroutineDatabase? = null
-    private var roommatesCollection: CoroutineCollection<RoommateUser>? = null
-    private var ownersCollection: CoroutineCollection<PropertyOwnerUser>? = null
-    private var propertiesCollection: CoroutineCollection<Property>? = null
-    private var matchesCollection: CoroutineCollection<Match>? = null
-    private var disLikeCollection: CoroutineCollection<DisLike>? = null
+    private val connectionString: String = AppConfig.mongoConnectionString
     private val logger = LoggerFactory.getLogger(DatabaseManager::class.java)
 
-    init {
-        try {
-            connect()
-            if (isTestEnv) {
-                roommatesCollection = database?.getCollection("roommates_test")
-                ownersCollection = database?.getCollection("owners_test")
-                propertiesCollection = database?.getCollection("properties_test")
-                matchesCollection = database?.getCollection("matches_test")
-                disLikeCollection = database?.getCollection("dislikes_test")
-            } else {
-                roommatesCollection = database?.getCollection("roommates")
-                ownersCollection = database?.getCollection("owners")
-                propertiesCollection = database?.getCollection("properties")
-            }
-
-        } catch (e: Exception) {
-            logger.error("Error in init database", e)
+    private val database: CoroutineDatabase by lazy {
+        logger.info("Initializing MongoDB connection to DB: '${AppConfig.mongoDatabase}'...")
+        try{
+            val client = KMongo.createClient(connectionString).coroutine
+            val db = client.getDatabase(mongoDb)
+            logger.info("Successfully connected to MongoDB.")
+            db
+        }catch (e: Exception) {
+            logger.error("!!! FAILED to connect to MongoDB !!! Check your MONGO_CONNECTION_STRING.", e)
+            throw e
         }
     }
 
-    private fun connect() {
-        try {
-            database = client.getDatabase(mongoDb).coroutine
-        } catch (e: Exception) {
-            logger.error("Error connecting to mongoDB", e)
-        }
+    val roommatesCollection: CoroutineCollection<RoommateUser> by lazy {
+        database.getCollection(if (isTestEnv) "roommates_test" else "roommates")
+    }
+    val ownersCollection: CoroutineCollection<PropertyOwnerUser> by lazy {
+        database.getCollection(if (isTestEnv) "owners_test" else "owners")
+    }
+    val propertiesCollection: CoroutineCollection<Property> by lazy {
+        database.getCollection(if (isTestEnv) "properties_test" else "properties")
+    }
+    val matchesCollection: CoroutineCollection<Match> by lazy {
+        database.getCollection(if (isTestEnv) "matches_test" else "matches")
+    }
+    val disLikeCollection: CoroutineCollection<DisLike> by lazy {
+        database.getCollection(if (isTestEnv) "dislikes_test" else "dislikes")
     }
 
 
     //-------------------------Roommates---------------------------------------------------------------
-    fun getRoommatesCollection(): CoroutineCollection<RoommateUser>? {
-        return roommatesCollection
-    }
-
     suspend fun updateRoommate(user: RoommateUser): RoommateUser? {
         return try {
-            roommatesCollection?.updateOneById(user.id.toString(), user)
+            roommatesCollection.updateOneById(user.id.toString(), user)
+            logger.info("Roommate updated successfully: ${user.email}")
             user
         } catch (e: Exception) {
             logger.error("Error updating roommate", e)
@@ -91,7 +68,7 @@ object DatabaseManager {
 
     suspend fun getAllRoommates(): List<RoommateUser> {
         try {
-            val roommates = roommatesCollection?.find()?.toList()
+            val roommates = roommatesCollection.find().toList()
             if (roommates == null) {
                 logger.warn("No roommates found")
             }
@@ -109,7 +86,7 @@ object DatabaseManager {
                 logger.warn("ID is null")
                 return null
             }
-            roommatesCollection?.findOneById(id)
+            roommatesCollection.findOneById(id)
         } catch (e: Exception) {
             logger.error("Error fetching roommate by ID", e)
             null
@@ -117,8 +94,7 @@ object DatabaseManager {
     }
 
     suspend fun getRoomateByEmail(email: String): RoommateUser? {
-        return try {
-            roommatesCollection?.findOne(RoommateUser::email eq email)
+        return try { roommatesCollection.findOne(RoommateUser::email eq email)
         } catch (e: Exception) {
             logger.error("Error finding roommate by email", e)
             null
@@ -127,7 +103,7 @@ object DatabaseManager {
 
     suspend fun getRoommatesByIds(ids: List<String>): List<RoommateUser> {
         return try {
-            roommatesCollection?.find(RoommateUser::id `in` ids)?.toList() ?: emptyList()
+            roommatesCollection.find(RoommateUser::id `in` ids).toList()
         } catch (e: Exception) {
             logger.error("Error fetching roommates by IDs", e)
             emptyList()
@@ -139,9 +115,9 @@ object DatabaseManager {
             val generatedId = ObjectId().toHexString()
             val userWithId = user.copy(id = generatedId)
 
-            val result = roommatesCollection?.insertOne(userWithId)
+            val result = roommatesCollection.insertOne(userWithId)
 
-            if (result?.wasAcknowledged() == true) {
+            if (result.wasAcknowledged() == true) {
                 userWithId
             } else {
                 logger.error("Insertion not acknowledged for user: ${user.email}")
@@ -156,14 +132,14 @@ object DatabaseManager {
     // Set reset token for roommate user
     suspend fun setRoommateResetToken(email: String, token: String, expiration: Long): Boolean {
         return try {
-            val updateResult = roommatesCollection?.updateOne(
+            val updateResult = roommatesCollection.updateOne(
                 RoommateUser::email eq email,
                 set(
                     RoommateUser::resetToken setTo token,
                     RoommateUser::resetTokenExpiration setTo expiration
                 )
             )
-            updateResult?.modifiedCount == 1L
+            updateResult.modifiedCount == 1L
         } catch (e: Exception) {
             logger.error("Error setting reset token for roommate", e)
             false
@@ -173,7 +149,7 @@ object DatabaseManager {
     // Find roommate by reset token
     suspend fun findRoommateByResetToken(token: String): RoommateUser? {
         return try {
-            roommatesCollection?.findOne(
+            roommatesCollection.findOne(
                 and(
                     RoommateUser::resetToken eq token,
                     RoommateUser::resetTokenExpiration gt System.currentTimeMillis()
@@ -188,7 +164,7 @@ object DatabaseManager {
     // Update roommate's password and clear reset token
     suspend fun resetRoommatePassword(email: String, hashedPassword: String): Boolean {
         return try {
-            val updateResult = roommatesCollection?.updateOne(
+            val updateResult = roommatesCollection.updateOne(
                 RoommateUser::email eq email,
                 combine(
                     setValue(RoommateUser::password, hashedPassword),
@@ -196,7 +172,7 @@ object DatabaseManager {
                     setValue(RoommateUser::resetTokenExpiration, null)
                 )
             )
-            updateResult?.modifiedCount == 1L
+            updateResult.modifiedCount == 1L
         } catch (e: Exception) {
             logger.error("Error resetting roommate password", e)
             false
@@ -210,20 +186,14 @@ object DatabaseManager {
 //-------------------------Owners----------------------------------------------------------------
 
 
-
-    fun getOwnersCollection(): CoroutineCollection<PropertyOwnerUser>? {
-        return ownersCollection
-    }
-
-
     suspend fun insertOwner(user: PropertyOwnerUser): PropertyOwnerUser? {
         return try {
             val generatedId = ObjectId().toHexString()
             val userWithId = user.copy(id = generatedId)
 
-            val result = ownersCollection?.insertOne(userWithId)
+            val result = ownersCollection.insertOne(userWithId)
 
-            if (result?.wasAcknowledged() == true) {
+            if (result.wasAcknowledged() == true) {
                 userWithId
             } else {
                 logger.error("Insertion not acknowledged for owner: ${user.email}")
@@ -239,7 +209,7 @@ object DatabaseManager {
 
     suspend fun getOwnerByEmail(email: String): PropertyOwnerUser? {
         try {
-            val owner = ownersCollection?.findOne(PropertyOwnerUser::email eq email)
+            val owner = ownersCollection.findOne(PropertyOwnerUser::email eq email)
             if (owner == null) {
                 logger.warn("Owner not found with email: $email")
             }
@@ -253,7 +223,7 @@ object DatabaseManager {
 
     suspend fun getOwnerById(id: String): PropertyOwnerUser? {
         return try {
-            ownersCollection?.findOneById(id)
+            ownersCollection.findOneById(id)
         } catch (e: Exception) {
             logger.error("Error fetching owner by ID", e)
             null
@@ -262,7 +232,7 @@ object DatabaseManager {
 
     suspend fun updateOwner(user: PropertyOwnerUser): PropertyOwnerUser? {
         return try {
-            ownersCollection?.updateOneById(user.id.toString(), user)
+            ownersCollection.updateOneById(user.id.toString(), user)
             user
         } catch (e: Exception) {
             logger.error("Error updating owner", e)
@@ -273,14 +243,14 @@ object DatabaseManager {
     // Set reset token for property owner user
     suspend fun setOwnerResetToken(email: String, token: String, expiration: Long): Boolean {
         return try {
-            val updateResult = ownersCollection?.updateOne(
+            val updateResult = ownersCollection.updateOne(
                 PropertyOwnerUser::email eq email,
                 set(
                     PropertyOwnerUser::resetToken setTo token,
                     PropertyOwnerUser::resetTokenExpiration setTo expiration
                 )
             )
-            updateResult?.modifiedCount == 1L
+            updateResult.modifiedCount == 1L
         } catch (e: Exception) {
             logger.error("Error setting reset token for owner", e)
             false
@@ -290,7 +260,7 @@ object DatabaseManager {
     // Find owner by reset token
     suspend fun findOwnerByResetToken(token: String): PropertyOwnerUser? {
         return try {
-            ownersCollection?.findOne(
+            ownersCollection.findOne(
                 and(
                     PropertyOwnerUser::resetToken eq token,
                     PropertyOwnerUser::resetTokenExpiration gt System.currentTimeMillis()
@@ -305,7 +275,7 @@ object DatabaseManager {
     // Update owner's password and clear reset token
     suspend fun resetOwnerPassword(email: String, hashedPassword: String): Boolean {
         return try {
-            val updateResult = ownersCollection?.updateOne(
+            val updateResult = ownersCollection.updateOne(
                 PropertyOwnerUser::email eq email,
                 combine(
                     setValue(PropertyOwnerUser::password, hashedPassword),
@@ -313,7 +283,7 @@ object DatabaseManager {
                     setValue(PropertyOwnerUser::resetTokenExpiration, null)
                 )
             )
-            updateResult?.modifiedCount == 1L
+            updateResult.modifiedCount == 1L
         } catch (e: Exception) {
             logger.error("Error resetting owner password", e)
             false
@@ -327,17 +297,13 @@ object DatabaseManager {
 //-------------------------Properties---------------------------------------------------------------
 
 
-    fun getPropertiesCollection(): CoroutineCollection<Property>? {
-        return propertiesCollection
-    }
-
     suspend fun getAllAvailableProperties(): List<Property> {
         try {
-            val properties = propertiesCollection?.find(Property::available eq true)?.toList()
+            val properties = propertiesCollection.find(Property::available eq true).toList()
             if (properties == null) {
                 logger.warn("No available properties found")
             }
-            return properties ?: emptyList()
+            return properties
         } catch (e: Exception) {
             logger.error("Error in getAllAvailableProperties", e)
         }
@@ -346,7 +312,7 @@ object DatabaseManager {
 
     suspend fun updateProperty(property: Property): Boolean? {
         return try {
-            val updatedProperty = propertiesCollection?.updateOneById(property.id.toString(), property)
+            val updatedProperty = propertiesCollection.updateOneById(property.id.toString(), property)
             if (updatedProperty != null) {
                 logger.info("Property updated successfully: ${property.title}")
                 true
@@ -362,8 +328,8 @@ object DatabaseManager {
 
     suspend fun deletePropertyById(id: String): Boolean {
         return try {
-            val result = propertiesCollection?.deleteOneById(id)
-            result?.wasAcknowledged() == true
+            val result = propertiesCollection.deleteOneById(id)
+            result.wasAcknowledged() == true
         } catch (e: Exception) {
             logger.error("Error deleting property by ID", e)
             false
@@ -374,7 +340,7 @@ object DatabaseManager {
 
     suspend fun getPropertyById(id: String): Property? {
         try {
-            val property = propertiesCollection?.findOne(Property::id eq id)
+            val property = propertiesCollection.findOne(Property::id eq id)
             logger.info("Property found: $id")
             return property
         } catch (e: Exception) {
@@ -389,9 +355,9 @@ object DatabaseManager {
             val generatedId = ObjectId().toHexString()
             val propertywithid = property.copy(id = generatedId)
 
-            val result = propertiesCollection?.insertOne(propertywithid)
+            val result = propertiesCollection.insertOne(propertywithid)
 
-            if (result?.wasAcknowledged() == true) {
+            if (result.wasAcknowledged() == true) {
                 propertywithid
             } else {
                 logger.error("Insertion not acknowledged for property: ${propertywithid.title}")
@@ -405,7 +371,7 @@ object DatabaseManager {
 
     suspend fun getPropertiesByOwnerId(ownerId: String): List<Property> {
         try {
-            val properties = propertiesCollection?.find(Property::ownerId eq ownerId)?.toList()
+            val properties = propertiesCollection.find(Property::ownerId eq ownerId).toList()
             if (properties == null) {
                 logger.warn("Properties not found for owner with id: $ownerId")
             }
@@ -419,10 +385,6 @@ object DatabaseManager {
 
 //---------------------------Matches------------------------------------------------------------------------------
 
-    fun getMatchesCollection(): CoroutineCollection<Match>? {
-        return matchesCollection
-    }
-
     suspend fun insertMatch(match: Match): Match? {
         return try {
             val matchWithId = if (match.id?.isBlank() == true) {
@@ -430,8 +392,8 @@ object DatabaseManager {
             } else {
                 match
             }
-            val result = matchesCollection?.insertOne(matchWithId)
-            if (result?.wasAcknowledged() == true) {
+            val result = matchesCollection.insertOne(matchWithId)
+            if (result.wasAcknowledged() == true) {
                 matchWithId
             } else {
                 logger.error("Insertion not acknowledged for match: ${matchWithId.id}")
@@ -445,7 +407,7 @@ object DatabaseManager {
 
     suspend fun getMatchById(id: String): Match? {
         return try {
-            matchesCollection?.findOneById(id)
+            matchesCollection.findOneById(id)
         } catch (e: Exception) {
             logger.error("Error fetching match by ID", e)
             null
@@ -455,13 +417,13 @@ object DatabaseManager {
     suspend fun appendSeenMatch(seekerId: String, match: SeenMatch) {
         val filter = eq("seekerId", seekerId)
         val update = Updates.addToSet("seenMatches", match)
-        disLikeCollection?.updateOne(filter, update)
+        disLikeCollection.updateOne(filter, update)
     }
 
 
     suspend fun getMatchesBySeekerId(seekerId: String): List<Match> {
         return try {
-            matchesCollection?.find(Match::seekerId eq seekerId)?.toList() ?: emptyList()
+            matchesCollection.find(Match::seekerId eq seekerId).toList()
         } catch (e: Exception) {
             logger.error("Error fetching matches by seeker ID", e)
             emptyList()
@@ -470,7 +432,7 @@ object DatabaseManager {
 
     suspend fun getMatchesByPropertyId(propertyId: String): List<Match> {
         return try {
-            matchesCollection?.find(Match::propertyId eq propertyId)?.toList() ?: emptyList()
+            matchesCollection.find(Match::propertyId eq propertyId).toList()
         } catch (e: Exception) {
             logger.error("Error fetching matches by property ID", e)
             emptyList()
@@ -479,7 +441,7 @@ object DatabaseManager {
 
     suspend fun getMatchCountByPropertyId(propertyId: String): Int {
         return try {
-            matchesCollection?.countDocuments(Match::propertyId eq propertyId)?.toInt() ?: 0
+            matchesCollection.countDocuments(Match::propertyId eq propertyId).toInt()
         } catch (e: Exception) {
             logger.error("Error fetching match count by property ID", e)
             0
@@ -488,7 +450,7 @@ object DatabaseManager {
 
     suspend fun getAverageMatchScoreByPropertyId(propertyId: String): Double {
         return try {
-            val matches = matchesCollection?.find(Match::propertyId eq propertyId)?.toList() ?: emptyList()
+            val matches = matchesCollection.find(Match::propertyId eq propertyId).toList()
             if (matches.isEmpty()) {
                 0.0
             } else {
@@ -502,7 +464,7 @@ object DatabaseManager {
 
     suspend fun getRoommateNumByPropertyId(propertyId: String): Int {
         return try {
-            val matches = matchesCollection?.find(Match::propertyId eq propertyId)?.toList() ?: emptyList()
+            val matches = matchesCollection.find(Match::propertyId eq propertyId).toList()
             if (matches.isEmpty()) {
                 0
             } else {
@@ -516,8 +478,8 @@ object DatabaseManager {
 
     suspend fun deleteMatch(matchId: String): Boolean {
         try {
-            val result = matchesCollection?.deleteOneById(matchId)
-            if (result?.wasAcknowledged() == true) {
+            val result = matchesCollection.deleteOneById(matchId)
+            if (result.wasAcknowledged() == true) {
                 logger.info("Match deleted successfully: $matchId")
                 return true
             } else {
@@ -533,26 +495,9 @@ object DatabaseManager {
 //------------------------------Dislikes--------------------------------------------------------------
 
 
-    suspend fun insertDisLike(dislike: DisLike): DisLike? {
-        return try {
-            val generatedId = ObjectId().toHexString()
-            val dislikeWithId = dislike.copy(id = generatedId)
-            val result = disLikeCollection?.insertOne(dislikeWithId)
-            if (result?.wasAcknowledged() == true) {
-                dislikeWithId
-            } else {
-                logger.error("Insertion not acknowledged for dislike: ${dislikeWithId.seekerId}")
-                null
-            }
-        } catch (e: Exception) {
-            logger.error("Error inserting dislike", e)
-            null
-        }
-    }
-
     suspend fun getDisLikeBySeekerId(seekerId: String): DisLike? {
         return try {
-            disLikeCollection?.findOne(DisLike::seekerId eq seekerId)
+            disLikeCollection.findOne(DisLike::seekerId eq seekerId)
         } catch (e: Exception) {
             logger.error("Error fetching dislike by seeker ID", e)
             null
@@ -561,7 +506,7 @@ object DatabaseManager {
 
     suspend fun getDislikeRoommatesIds(seekerId: String): List<String?> {
         return try {
-            val disLike = disLikeCollection?.findOne(DisLike::seekerId eq seekerId)
+            val disLike = disLikeCollection.findOne(DisLike::seekerId eq seekerId)
             disLike?.dislikedRoommatesIds ?: emptyList()
         } catch (e: Exception) {
             logger.error("Error fetching disliked roommates IDs", e)
@@ -571,7 +516,7 @@ object DatabaseManager {
 
     suspend fun getDislikePropertiesIds(seekerId: String): List<String?> {
         return try {
-            val disLike = disLikeCollection?.findOne(DisLike::seekerId eq seekerId)
+            val disLike = disLikeCollection.findOne(DisLike::seekerId eq seekerId)
             disLike?.dislikedPropertiesIds ?: emptyList()
         } catch (e: Exception) {
             logger.error("Error fetching disliked properties IDs", e)
@@ -581,10 +526,10 @@ object DatabaseManager {
 
     suspend fun updateDislikeRoommates(seekerId: String, dislikedRoommatesIds: List<String?>): DisLike? {
         return try {
-            val disLike = disLikeCollection?.findOne(DisLike::seekerId eq seekerId)
+            val disLike = disLikeCollection.findOne(DisLike::seekerId eq seekerId)
             if (disLike != null) {
                 disLike.dislikedRoommatesIds = dislikedRoommatesIds
-                disLikeCollection?.updateOneById(disLike.id!!, disLike)
+                disLikeCollection.updateOneById(disLike.id!!, disLike)
                 disLike
             } else {
                 logger.warn("Dislike record not found for seekerId: $seekerId")
@@ -598,10 +543,10 @@ object DatabaseManager {
 
     suspend fun updateDislikeProperties(seekerId: String, dislikedPropertiesIds: List<String?>): DisLike? {
         return try {
-            val disLike = disLikeCollection?.findOne(DisLike::seekerId eq seekerId)
+            val disLike = disLikeCollection.findOne(DisLike::seekerId eq seekerId)
             if (disLike != null) {
                 disLike.dislikedPropertiesIds = dislikedPropertiesIds
-                disLikeCollection?.updateOneById(disLike.id!!, disLike)
+                disLikeCollection.updateOneById(disLike.id!!, disLike)
                 disLike
             } else {
                 null
@@ -615,7 +560,7 @@ object DatabaseManager {
     // Get dislike record for a seeker
     suspend fun getDislikeBySeekerId(seekerId: String): DisLike? {
         return try {
-            disLikeCollection?.findOne(DisLike::seekerId eq seekerId)
+            disLikeCollection.findOne(DisLike::seekerId eq seekerId)
         } catch (e: Exception) {
             logger.error("Error getting DisLike by seekerId", e)
             null
@@ -625,7 +570,7 @@ object DatabaseManager {
     // Insert a new dislike record
     suspend fun insertDislike(dislike: DisLike): Boolean {
         return try {
-            disLikeCollection?.insertOne(dislike)
+            disLikeCollection.insertOne(dislike)
             true
         } catch (e: Exception) {
             logger.error("Error inserting new DisLike", e)
@@ -636,7 +581,7 @@ object DatabaseManager {
     // Update an existing dislike record
     suspend fun updateDislike(dislike: DisLike): Boolean {
         return try {
-            disLikeCollection?.replaceOne(DisLike::seekerId eq dislike.seekerId, dislike)
+            disLikeCollection.replaceOne(DisLike::seekerId eq dislike.seekerId, dislike)
             true
         } catch (e: Exception) {
             logger.error("Error updating DisLike", e)

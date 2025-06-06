@@ -49,11 +49,11 @@ object JWTUtils {
 
     suspend fun updateRefreshToken(user: Any, refreshToken: String) {
         when (user) {
-            is RoommateUser -> DatabaseManager.getRoommatesCollection()?.updateOne(
+            is RoommateUser -> DatabaseManager.roommatesCollection.updateOne(
                 RoommateUser::id eq user.id,
                 setValue(RoommateUser::refreshToken, refreshToken)
             )
-            is PropertyOwnerUser -> DatabaseManager.getOwnersCollection()?.updateOne(
+            is PropertyOwnerUser -> DatabaseManager.ownersCollection.updateOne(
                 PropertyOwnerUser::id eq user.id,
                 setValue(PropertyOwnerUser::refreshToken, refreshToken)
             )
