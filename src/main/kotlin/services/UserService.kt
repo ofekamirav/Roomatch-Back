@@ -1,6 +1,7 @@
 
 package com.services
 
+import com.config.AppConfig
 import com.database.DatabaseManager
 import com.models.*
 import com.utils.Hashing
@@ -12,16 +13,18 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
 import com.exceptions.IncompleteRegistrationException
+import org.slf4j.LoggerFactory
 
 
 object UserService {
 
     private val jsonFactory = GsonFactory.getDefaultInstance()
     private val httpTransport = GoogleNetHttpTransport.newTrustedTransport()
+    private val logger = LoggerFactory.getLogger(UserService::class.java)
 
     //Register a roommate user
     suspend fun registerRoommate(user: RoommateUser): UserResponse? {
-        val existingUser = DatabaseManager.getRoommatesCollection()?.findOne(RoommateUser::email eq user.email)
+        val existingUser = DatabaseManager.roommatesCollection.findOne(RoommateUser::email eq user.email)
         if (existingUser != null) {
             throw IllegalArgumentException("User with this email already exists.")
         }
@@ -36,17 +39,21 @@ object UserService {
         val insertedUser = DatabaseManager.insertRoommate(newUser)
 
         return if (insertedUser != null) {
+            logger.info("Roommate registered successfully: ${insertedUser.email}")
             UserResponse(
                 token = accessToken,
                 refreshToken = refreshToken,
                 userId = insertedUser.id,
                 userType = roommateType
             )
-        } else null
+        } else{
+            logger.error("Failed to register roommate: ${user.email}")
+            null
+        }
     }
 
     suspend fun registerPropertyOwner(user: PropertyOwnerUser): UserResponse? {
-        val existingUser = DatabaseManager.getOwnersCollection()?.findOne(PropertyOwnerUser::email eq user.email)
+        val existingUser = DatabaseManager.ownersCollection.findOne(PropertyOwnerUser::email eq user.email)
         if (existingUser != null) {
             throw IllegalArgumentException("User with this email already exists.")
         }
@@ -61,13 +68,17 @@ object UserService {
         val insertedUser = DatabaseManager.insertOwner(newUser)
 
         return if (insertedUser != null) {
+            logger.info("Property owner registered successfully: ${insertedUser.email}")
             UserResponse(
                 token = accessToken,
                 refreshToken = refreshToken,
                 userId = insertedUser.id,
                 userType = ownerType
             )
-        } else null
+        } else{
+            logger.error("Failed to register property owner: ${user.email}")
+            null
+        }
     }
 
     suspend fun login(email: String, password: String): UserResponse {
@@ -90,14 +101,13 @@ object UserService {
 
         when (userType) {
             "Roommate" -> {
-                DatabaseManager.getRoommatesCollection()
-                    ?.updateOne(RoommateUser::email eq email, setValue(RoommateUser::refreshToken, refreshToken))
+                DatabaseManager.roommatesCollection.updateOne(RoommateUser::email eq email, setValue(RoommateUser::refreshToken, refreshToken))
             }
             "PropertyOwner" -> {
-                DatabaseManager.getOwnersCollection()
-                    ?.updateOne(PropertyOwnerUser::email eq email, setValue(PropertyOwnerUser::refreshToken, refreshToken))
+                DatabaseManager.ownersCollection.updateOne(PropertyOwnerUser::email eq email, setValue(PropertyOwnerUser::refreshToken, refreshToken))
             }
         }
+        logger.info("User logged in successfully: $email")
 
         return UserResponse(
             token = accessToken,
@@ -181,8 +191,8 @@ object UserService {
     suspend fun handleGoogleSignIn(idTokenString: String): UserResponse {
         val verifier = GoogleIdTokenVerifier.Builder(httpTransport, jsonFactory)
             .setAudience(listOf(
-                "366891104441-92er57f3s7l2fr55abu7822uea1u5t03.apps.googleusercontent.com", // Web Client ID
-                "366891104441-vcv1o33mkv628rggcfetj4ekipc0thmi.apps.googleusercontent.com"  // Android Client ID
+                AppConfig.googleWebClientId,// Web Client ID
+                AppConfig.googleAndroidClientId, // Android Client ID
             ))
             .build()
 
@@ -237,6 +247,7 @@ object UserService {
     suspend fun updateRoommate(id: String, user: RoommateUser): RoommateUser? {
         val existingUser = DatabaseManager.getRoommateById(id)
             ?: throw IllegalArgumentException("User with this ID does not exist.")
+        logger.info("Updating roommate with ID: $id")
 
         val updatedUser = existingUser.copy(
             id = id,

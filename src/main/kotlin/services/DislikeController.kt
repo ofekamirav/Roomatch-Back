@@ -10,7 +10,7 @@
             try {
                 val existing = DatabaseManager.getDislikeBySeekerId(match.seekerId)
 
-                val newPropertyId = match.propertyId?.takeIf {
+                val newPropertyId = match.propertyId.takeIf {
                     existing?.dislikedPropertiesIds?.contains(it) != true
                 }
 

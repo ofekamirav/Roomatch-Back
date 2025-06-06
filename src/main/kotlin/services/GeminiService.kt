@@ -1,5 +1,6 @@
 package com.services
 
+import com.config.AppConfig
 import com.models.BioRequest
 import com.utils.buildPrompt
 import io.github.cdimascio.dotenv.dotenv
@@ -33,7 +34,7 @@ object GeminiService {
     }
 
     suspend fun generateBio(user: BioRequest): String {
-        val apiKey = dotenv["GEMINI_API_KEY"] ?: return "API key not set"
+        val apiKey = AppConfig.geminiApiKey ?: return "API key not set"
         val prompt = buildPrompt(user)
 
         val httpResponse = client.post("https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=$apiKey") {

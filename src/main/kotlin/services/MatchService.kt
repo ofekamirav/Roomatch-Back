@@ -15,7 +15,6 @@ import com.models.DisLike
 object MatchService {
 
     private val logger = LoggerFactory.getLogger(MatchService::class.java)
-    val userMatchCache: MutableMap<String, List<Match>> = mutableMapOf()
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
     //Calculate a Match between a seeker and a property and roommates
@@ -48,9 +47,9 @@ object MatchService {
         } else {
             logger.info("Dislike data found for seekerId: $seekerId, dislikedPropertiesIds: ${dislike.dislikedPropertiesIds}, dislikedRoommatesIds: ${dislike.dislikedRoommatesIds}")
         }
-        val dislikedProperties = dislike?.dislikedPropertiesIds ?: emptyList()
-        val dislikedRoommates = dislike?.dislikedRoommatesIds ?: emptyList()
-        val seenMatches = dislike?.seenMatches ?: emptyList()
+        val dislikedProperties = dislike.dislikedPropertiesIds
+        val dislikedRoommates = dislike.dislikedRoommatesIds
+        val seenMatches = dislike.seenMatches
 
 
         val locationProperties = allProperties.filter { property ->

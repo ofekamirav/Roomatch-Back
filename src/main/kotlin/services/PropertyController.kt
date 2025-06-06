@@ -31,7 +31,7 @@ object PropertyController {
         return DatabaseManager.getPropertiesByOwnerId(ownerId)
     }
 
-    suspend fun getPropertyById(propertyId: String): Property? {
+    suspend fun getPropertyById(propertyId: String): Property {
         val property = DatabaseManager.getPropertyById(propertyId)
             ?: throw IllegalArgumentException("Property with this ID does not exist.")
         logger.info("Property found: ${property.id}")
