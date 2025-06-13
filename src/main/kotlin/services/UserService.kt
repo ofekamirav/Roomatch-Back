@@ -249,13 +249,15 @@ object UserService {
             ?: throw IllegalArgumentException("User with this ID does not exist.")
         logger.info("Updating roommate with ID: $id")
 
+        val hashedPassword = Hashing.hashPassword(user.password)
+
         val updatedUser = existingUser.copy(
             id = id,
             email = user.email,
             fullName = user.fullName,
             phoneNumber = user.phoneNumber,
             birthDate = user.birthDate,
-            password = user.password,
+            password = hashedPassword,
             profilePicture = user.profilePicture,
             resetToken = user.resetToken,
             resetTokenExpiration = user.resetTokenExpiration,
@@ -284,13 +286,15 @@ object UserService {
         val existingUser = DatabaseManager.getOwnerById(id)
             ?: throw IllegalArgumentException("User with this ID does not exist.")
 
+        val hashedPassword = Hashing.hashPassword(user.password)
+
         val updatedUser = existingUser.copy(
             id = id,
             email = user.email,
             fullName = user.fullName,
             phoneNumber = user.phoneNumber,
             birthDate = user.birthDate,
-            password = user.password,
+            password = hashedPassword,
             profilePicture = user.profilePicture,
             resetToken = user.resetToken,
             resetTokenExpiration = user.resetTokenExpiration,

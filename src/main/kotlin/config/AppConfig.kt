@@ -9,7 +9,7 @@ object AppConfig {
         ignoreIfMissing = true
         directory = "./"
         if (isTestEnv) {
-            filename = ".env.test"
+            filename = "...env.test"
         }
     }
 
