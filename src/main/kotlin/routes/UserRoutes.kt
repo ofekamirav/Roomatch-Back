@@ -49,6 +49,30 @@ fun Routing.configureUserRoutes() {
             }
         }
 
+        //check if email is already registered
+        post("/check-email") {
+            try {
+                val emailRequest = call.receive<Map<String, String>>()
+                val email = emailRequest["email"]
+                if (email == null) {
+                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Email is required"))
+                    return@post
+                }
+
+                val isRegistered = UserService.isEmailRegistered(email)
+                if( isRegistered) {
+                    call.respond(HttpStatusCode.OK, mapOf("isRegistered" to isRegistered))
+                } else {
+                    call.respond(HttpStatusCode.NotFound, mapOf("isRegistered" to isRegistered, "message" to "Email not registered"))
+                }
+            } catch (e: Exception) {
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    mapOf("error" to (e.message ?: "Failed to check email registration"))
+                )
+            }
+        }
+
         // Update roommate user
         put("/{id}") {
             try {

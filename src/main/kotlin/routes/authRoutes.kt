@@ -9,6 +9,7 @@ import com.database.DatabaseManager
 import com.models.PasswordResetRequest
 import com.models.RequestRefresh
 import com.models.ResetPassword
+import com.services.EmailService
 import com.services.UserService
 import io.ktor.server.application.*
 
@@ -61,11 +62,26 @@ fun Routing.configureAuthRoutes() {
         post("/request-password-reset") {
             try {
                 val request = call.receive<PasswordResetRequest>()
-                val result = UserService.requestPasswordReset(request.email, request.userType)
+                val email = request.email
+                val userType = request.userType
 
-                when (result) {
+                val resetResult = UserService.requestPasswordReset(email, userType)
+
+                when (resetResult.status) {
                     "SUCCESS" -> {
-                        call.respond(HttpStatusCode.OK, mapOf("message" to "Password reset token generated and sent successfully."))
+                        val otpCode = resetResult.otpCode
+                        if (otpCode != null) {
+                            val emailSent = EmailService.sendPasswordResetEmail(email, otpCode)
+                            if (emailSent) {
+                                call.respond(HttpStatusCode.OK, mapOf("message" to "Password reset code sent to your email."))
+                            } else {
+                                application.log.error("Failed to send OTP email for $email. OTP generated but not sent.")
+                                call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to send password reset email. Please try again later."))
+                            }
+                        } else {
+                            application.log.error("Internal server error: OTP not generated for $email.")
+                            call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Internal server error: OTP not generated."))
+                        }
                     }
                     "USER_NOT_FOUND" -> {
                         call.respond(HttpStatusCode.NotFound, mapOf("error" to "User with the provided email and type not found."))
@@ -74,9 +90,10 @@ fun Routing.configureAuthRoutes() {
                         call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid user type provided."))
                     }
                     "TOKEN_SET_FAILED" -> {
-                        call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to set reset token. Please try again later."))
+                        call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to set password reset code in database. Please try again later."))
                     }
                     else -> {
+                        application.log.error("An unexpected status '${resetResult.status}' occurred during password reset request for email: $email.")
                         call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "An unexpected error occurred during password reset request."))
                     }
                 }
@@ -93,14 +110,15 @@ fun Routing.configureAuthRoutes() {
         post("/reset-password") {
             try {
                 val request = call.receive<ResetPassword>()
-                val success = UserService.resetPassword(request.token, request.newPassword, request.userType)
+                val success = UserService.resetPassword(request.email, request.otpCode, request.newPassword, request.userType)
 
                 if (success) {
                     call.respond(HttpStatusCode.OK, mapOf("message" to "Password reset successfully."))
                 } else {
-                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid or expired token."))
+                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid or expired verification code (OTP) or incorrect email."))
                 }
             } catch (e: Exception) {
+                application.log.error("Error in /reset-password: ${e.localizedMessage}", e)
                 call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "Internal server error")))
             }
         }

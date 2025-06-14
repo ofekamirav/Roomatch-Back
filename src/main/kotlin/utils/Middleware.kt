@@ -10,7 +10,7 @@ import io.ktor.server.response.*
 fun Application.configureMiddleware() {
     install(Authentication) {
         jwt("auth-jwt") {
-            verifier(JWTUtils.verifyToken("")) // this uses your JWTUtils verifier
+            verifier(JWTUtils.verifyToken()) // this uses your JWTUtils verifier
             validate { credential ->
                 val email = credential.payload.getClaim("email").asString()
                 if (!email.isNullOrBlank()) {
