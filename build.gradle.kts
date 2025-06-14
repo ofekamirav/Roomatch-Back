@@ -63,5 +63,15 @@ dependencies {
             csv.required.set(false)
         }
     }
+
+    tasks.named("shadowJar", com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar::class) {
+        archiveBaseName.set("roomatch-server")
+        archiveClassifier.set("")
+        archiveVersion.set("")
+        destinationDirectory.set(file("${project.projectDir}/deploy"))
+
+        mergeServiceFiles()
+        exclude("META-INF/*.DSA", "META-INF/*.SF", "META-INF/*.RSA")
+    }
 }
 
