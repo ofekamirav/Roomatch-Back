@@ -146,18 +146,34 @@ object DatabaseManager {
         }
     }
 
-    // Find roommate by reset token
-    suspend fun findRoommateByResetToken(token: String): RoommateUser? {
+    suspend fun findRoommateByEmailAndOtp(email: String, otpCode: String): RoommateUser? {
         return try {
             roommatesCollection.findOne(
                 and(
-                    RoommateUser::resetToken eq token,
+                    RoommateUser::email eq email,
+                    RoommateUser::resetToken eq otpCode,
                     RoommateUser::resetTokenExpiration gt System.currentTimeMillis()
                 )
             )
         } catch (e: Exception) {
-            logger.error("Error finding roommate by reset token", e)
+            logger.error("Error finding roommate by email and reset token", e)
             null
+        }
+    }
+
+    suspend fun clearRoommateResetToken(email: String): Boolean {
+        return try {
+            val updateResult = roommatesCollection.updateOne(
+                RoommateUser::email eq email,
+                combine(
+                    setValue(RoommateUser::resetToken, null),
+                    setValue(RoommateUser::resetTokenExpiration, null)
+                )
+            )
+            updateResult.modifiedCount == 1L
+        } catch (e: Exception) {
+            logger.error("Error clearing roommate reset token", e)
+            false
         }
     }
 
@@ -257,17 +273,17 @@ object DatabaseManager {
         }
     }
 
-    // Find owner by reset token
-    suspend fun findOwnerByResetToken(token: String): PropertyOwnerUser? {
+    suspend fun findOwnerByEmailAndOtp(email: String, otpCode: String): PropertyOwnerUser? {
         return try {
             ownersCollection.findOne(
                 and(
-                    PropertyOwnerUser::resetToken eq token,
+                    PropertyOwnerUser::email eq email,
+                    PropertyOwnerUser::resetToken eq otpCode,
                     PropertyOwnerUser::resetTokenExpiration gt System.currentTimeMillis()
                 )
             )
         } catch (e: Exception) {
-            logger.error("Error finding owner by reset token", e)
+            logger.error("Error finding owner by email and reset token", e)
             null
         }
     }
@@ -286,6 +302,22 @@ object DatabaseManager {
             updateResult.modifiedCount == 1L
         } catch (e: Exception) {
             logger.error("Error resetting owner password", e)
+            false
+        }
+    }
+
+    suspend fun clearOwnerResetToken(email: String): Boolean {
+        return try {
+            val updateResult = ownersCollection.updateOne(
+                PropertyOwnerUser::email eq email,
+                combine(
+                    setValue(PropertyOwnerUser::resetToken, null),
+                    setValue(PropertyOwnerUser::resetTokenExpiration, null)
+                )
+            )
+            updateResult.modifiedCount == 1L
+        } catch (e: Exception) {
+            logger.error("Error clearing owner reset token", e)
             false
         }
     }

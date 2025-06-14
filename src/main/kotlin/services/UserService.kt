@@ -14,6 +14,7 @@ import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
 import com.exceptions.IncompleteRegistrationException
 import org.slf4j.LoggerFactory
+import kotlin.random.Random
 
 
 object UserService {
@@ -21,6 +22,11 @@ object UserService {
     private val jsonFactory = GsonFactory.getDefaultInstance()
     private val httpTransport = GoogleNetHttpTransport.newTrustedTransport()
     private val logger = LoggerFactory.getLogger(UserService::class.java)
+
+    private fun generateOtpCode(): String {
+        return Random.nextInt(100_000, 1_000_000).toString()
+    }
+
 
     //Register a roommate user
     suspend fun registerRoommate(user: RoommateUser): UserResponse? {
@@ -117,9 +123,9 @@ object UserService {
         )
     }
 
-    suspend fun requestPasswordReset(email: String, userType: String): String {
+    suspend fun requestPasswordReset(email: String, userType: String): PasswordResetRequestResult {
         val userExists: Boolean
-
+        logger.info("Requesting password reset for email: $email, userType: $userType")
         when (userType) {
             "Roommate" -> {
                 val roommate = DatabaseManager.getRoomateByEmail(email)
@@ -129,46 +135,70 @@ object UserService {
                 val owner = DatabaseManager.getOwnerByEmail(email)
                 userExists = owner != null
             }
-            else -> return "INVALID_USER_TYPE"
+            else -> {
+                logger.error("Invalid user type: $userType")
+                return PasswordResetRequestResult("INVALID_USER_TYPE", error = "Invalid user type")
+            }
         }
 
         if (!userExists) {
-            return "USER_NOT_FOUND"
+            return PasswordResetRequestResult("USER_NOT_FOUND", error = "User with the provided email and type not found")
         }
 
-        val resetToken = JWTUtils.generateToken(email)
-        val expiration = System.currentTimeMillis() + 3600000
+        val otpCode = generateOtpCode()
+        val expiration = System.currentTimeMillis() + 600_000 // OTP valid for 10 minutes
 
         val tokenSetSuccessfully = when (userType) {
-            "Roommate" -> DatabaseManager.setRoommateResetToken(email, resetToken, expiration)
-            "PropertyOwner" -> DatabaseManager.setOwnerResetToken(email, resetToken, expiration)
+            "Roommate" -> DatabaseManager.setRoommateResetToken(email, otpCode, expiration)
+            "PropertyOwner" -> DatabaseManager.setOwnerResetToken(email, otpCode, expiration)
             else -> false
         }
 
         return if (tokenSetSuccessfully) {
-            "SUCCESS"
+            PasswordResetRequestResult("SUCCESS", otpCode)
+
         } else {
-            "TOKEN_SET_FAILED"
+            logger.error("Failed to set 0TP for email: $email, userType: $userType")
+            PasswordResetRequestResult("TOKEN_SET_FAILED")
         }
     }
 
-    suspend fun resetPassword(token: String, newPassword: String, userType: String): Boolean {
+    suspend fun resetPassword(email: String, otpCode: String, newPassword: String, userType: String): Boolean {
         val hashedPassword = Hashing.hashPassword(newPassword)
-
+        logger.info("Attempting to reset password for email: $email with OTP: $otpCode, userType: $userType")
         return when (userType) {
             "Roommate" -> {
-                val user = DatabaseManager.findRoommateByResetToken(token)
+                val user = DatabaseManager.findRoommateByEmailAndOtp(email, otpCode)
                 if (user != null) {
-                    DatabaseManager.resetRoommatePassword(user.email, hashedPassword)
-                } else false
+                    logger.info("Resetting password for Roommate: ${user.email}")
+                    val success = DatabaseManager.resetRoommatePassword(user.email, hashedPassword)
+                    if (success) {
+                        DatabaseManager.clearRoommateResetToken(user.email)
+                    }
+                    success
+                } else {
+                    logger.warn("Roommate not found or OTP invalid/expired for email: $email")
+                    false
+                }
             }
             "PropertyOwner" -> {
-                val user = DatabaseManager.findOwnerByResetToken(token)
+                val user = DatabaseManager.findOwnerByEmailAndOtp(email, otpCode)
                 if (user != null) {
-                    DatabaseManager.resetOwnerPassword(user.email, hashedPassword)
-                } else false
+                    logger.info("Resetting password for Property Owner: ${user.email}")
+                    val success = DatabaseManager.resetOwnerPassword(user.email, hashedPassword)
+                    if (success) {
+                        DatabaseManager.clearOwnerResetToken(user.email)
+                    }
+                    success
+                } else {
+                    logger.warn("Property Owner not found or OTP invalid/expired for email: $email")
+                    false
+                }
             }
-            else -> false
+            else -> {
+                logger.error("Invalid user type: $userType for email: $email")
+                false
+            }
         }
     }
 
@@ -280,6 +310,12 @@ object UserService {
         )
 
         return DatabaseManager.updateRoommate(updatedUser)
+    }
+
+    suspend fun isEmailRegistered(email: String): Boolean {
+        val roommateExists = DatabaseManager.getRoomateByEmail(email) != null
+        val ownerExists = DatabaseManager.getOwnerByEmail(email) != null
+        return roommateExists || ownerExists
     }
 
     suspend fun updateOwner(id: String, user: PropertyOwnerUser): PropertyOwnerUser? {

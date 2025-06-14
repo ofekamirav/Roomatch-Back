@@ -1,6 +1,7 @@
 package com
 
 import com.config.AppConfig
+import com.services.EmailService
 import com.utils.configureMiddleware
 import io.ktor.server.application.*
 import io.github.cdimascio.dotenv.dotenv

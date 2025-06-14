@@ -35,13 +35,13 @@ object JWTUtils {
             .sign(Algorithm.HMAC256(REFRESH_SECRET))
     }
 
-    fun verifyToken(token: String): JWTVerifier {
+    fun verifyToken(): JWTVerifier {
         return JWT.require(Algorithm.HMAC256(SECRET))
             .withIssuer("roomatch")
             .build()
     }
 
-    fun verifyRefreshToken(token: String): JWTVerifier {
+    fun verifyRefreshToken(): JWTVerifier {
         return JWT.require(Algorithm.HMAC256(REFRESH_SECRET))
             .withIssuer("roomatch")
             .build()
