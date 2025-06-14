@@ -112,7 +112,7 @@ fun Routing.configurePropertyRoutes() {
                 val result = PropertyController.deleteProperty(propertyId)
 
                 if (result) {
-                    call.respond(HttpStatusCode.NoContent)
+                    call.respond(HttpStatusCode.OK, mapOf("message" to "Property deleted successfully"))
                 } else {
                     call.respond(HttpStatusCode.NotFound, mapOf("error" to "Property not found"))
                 }
