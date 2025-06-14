@@ -23,7 +23,7 @@ fun Routing.configureAuthRoutes() {
                 val refreshToken = request.refreshToken
 
                 // Verify the refresh token
-                val decodedJWT = JWTUtils.verifyRefreshToken(refreshToken).verify(refreshToken)
+                val decodedJWT = JWTUtils.verifyRefreshToken().verify(refreshToken)
                 val email = decodedJWT.getClaim("email").asString()
 
                 // Check if the user exists and the refresh token is valid
