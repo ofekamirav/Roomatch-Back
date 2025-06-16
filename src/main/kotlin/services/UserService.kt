@@ -13,6 +13,7 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
 import com.exceptions.IncompleteRegistrationException
+import com.fasterxml.jackson.annotation.ObjectIdGenerators.StringIdGenerator
 import org.slf4j.LoggerFactory
 import kotlin.random.Random
 
@@ -279,7 +280,14 @@ object UserService {
             ?: throw IllegalArgumentException("User with this ID does not exist.")
         logger.info("Updating roommate with ID: $id")
 
-        val hashedPassword = Hashing.hashPassword(user.password)
+        val finalPasswordHash: String
+        if(user.password == existingUser.password) {
+            // If the password is not changed, keep the existing hash
+            finalPasswordHash = existingUser.password
+        } else {
+            // If the password is changed, hash the new password
+            finalPasswordHash = Hashing.hashPassword(user.password)
+        }
 
         val updatedUser = existingUser.copy(
             id = id,
@@ -287,7 +295,7 @@ object UserService {
             fullName = user.fullName,
             phoneNumber = user.phoneNumber,
             birthDate = user.birthDate,
-            password = hashedPassword,
+            password = finalPasswordHash,
             profilePicture = user.profilePicture,
             resetToken = user.resetToken,
             resetTokenExpiration = user.resetTokenExpiration,
@@ -322,6 +330,16 @@ object UserService {
         val existingUser = DatabaseManager.getOwnerById(id)
             ?: throw IllegalArgumentException("User with this ID does not exist.")
 
+        val finalPasswordHash: String
+
+        if(user.password == existingUser.password) {
+            // If the password is not changed, keep the existing hash
+            finalPasswordHash = existingUser.password
+        } else {
+            // If the password is changed, hash the new password
+            finalPasswordHash = Hashing.hashPassword(user.password)
+        }
+
         val hashedPassword = Hashing.hashPassword(user.password)
 
         val updatedUser = existingUser.copy(
@@ -330,7 +348,7 @@ object UserService {
             fullName = user.fullName,
             phoneNumber = user.phoneNumber,
             birthDate = user.birthDate,
-            password = hashedPassword,
+            password = finalPasswordHash,
             profilePicture = user.profilePicture,
             resetToken = user.resetToken,
             resetTokenExpiration = user.resetTokenExpiration,
