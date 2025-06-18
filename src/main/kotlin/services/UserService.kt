@@ -147,7 +147,7 @@ object UserService {
         }
 
         val otpCode = generateOtpCode()
-        val expiration = System.currentTimeMillis() + 600_000 // OTP valid for 10 minutes
+        val expiration = System.currentTimeMillis() + 900_000 // OTP valid for 15 minutes
 
         val tokenSetSuccessfully = when (userType) {
             "Roommate" -> DatabaseManager.setRoommateResetToken(email, otpCode, expiration)
