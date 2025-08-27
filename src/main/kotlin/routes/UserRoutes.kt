@@ -9,12 +9,11 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import com.exceptions.IncompleteRegistrationException
 import com.services.AnalyticsService
-import kotlinx.serialization.Serializable
-import sun.util.logging.resources.logging
+import org.slf4j.LoggerFactory
 
 
 fun Routing.configureUserRoutes() {
-
+    val logger = LoggerFactory.getLogger(UserService::class.java)
     get("/api/test") {
         call.respondText("It works!")
     }
@@ -120,7 +119,8 @@ fun Routing.configureUserRoutes() {
             try {
                 val request = call.receive<BioRequest>()
                 val generatedBio = GeminiService.generateBio(request)
-                call.respond(BioResponse(generatedBio))
+                logger.info("Generated bio: $generatedBio")
+                call.respond(generatedBio)
             } catch (e: Exception) {
                 call.respond(
                     HttpStatusCode.InternalServerError,
