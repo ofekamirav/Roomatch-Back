@@ -1,17 +1,19 @@
-FROM gradle:jdk21 AS build
+FROM gradle:7.6-jdk11 AS build
 
-WORKDIR /home/gradle/project
+WORKDIR /home/gradle/src
 
 COPY . .
 
+RUN chmod +x ./gradlew
 
-RUN ./gradlew shadowJar
+RUN ./gradlew buildFatJar --no-daemon
 
+FROM openjdk:11-jre-slim
 
-FROM eclipse-temurin:21-jre
+EXPOSE 8080
 
-WORKDIR /app
+RUN mkdir /app
 
-COPY --from=build /home/gradle/project/deploy/*.jar app.jar
+COPY --from=build /home/gradle/src/build/libs/*.jar /app/roomatch-server.jar
 
-CMD ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "/app/roomatch-server.jar"]
