@@ -1,3 +1,4 @@
+
 FROM gradle:7.6-jdk11 AS build
 
 WORKDIR /home/gradle/src
