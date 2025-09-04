@@ -1,0 +1,10 @@
+.build/
+.gradle/
+build/
+deploy/
+.git/
+.gitignore
+**/node_modules/
+*.iml
+*.log
+out/
