@@ -1,20 +1,26 @@
+FROM gradle:8.7-jdk21 AS build
+WORKDIR /app
 
-FROM gradle:7.6-jdk11 AS build
-
-WORKDIR /home/gradle/src
+COPY gradle gradle
+COPY gradlew ./
+COPY settings.gradle.kts ./
+COPY build.gradle.kts ./
+COPY gradle.properties ./
+RUN chmod +x ./gradlew
+RUN ./gradlew dependencies --no-daemon || true
 
 COPY . .
 
-RUN chmod +x ./gradlew
+RUN ./gradlew clean shadowJar --no-daemon
 
-RUN ./gradlew buildFatJar --no-daemon
+RUN set -e; \
+    echo "=== DEBUG: deploy ==="; ls -lah deploy || true; \
+    cp "$(ls -t deploy/*.jar | head -n1)" /app/app.jar
 
-FROM openjdk:11-jre-slim
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+COPY --from=build /app/app.jar /app/app.jar
 
 EXPOSE 8080
-
-RUN mkdir /app
-
-COPY --from=build /home/gradle/src/build/libs/*.jar /app/roomatch-server.jar
-
-ENTRYPOINT ["java", "-jar", "/app/roomatch-server.jar"]
+ENV JAVA_TOOL_OPTIONS="-Xms64m -Xmx512m -Dio.ktor.development=false"
+ENTRYPOINT ["java","-jar","/app/app.jar"]
